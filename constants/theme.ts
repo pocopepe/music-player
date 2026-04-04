@@ -5,7 +5,7 @@
 
 import { Platform } from 'react-native';
 
-const accent = '#FF8821';
+const accent = '#FF8216';
 
 export const Colors = {
   accent,
@@ -21,13 +21,13 @@ export const Colors = {
     border: '#E0E0E0',
   },
   dark: {
-    text: '#ECEDEE',
-    subtext: '#9BA1A6',
-    secondaryText: '#AAA9AA',
-    background: '#151718',
+    text: '#FFFFFF',
+    subtext: '#727374',
+    secondaryText: '#4F5051',
+    background: '#181A20',
     card: '#1E2122',
-    icon: '#9BA1A6',
-    tabIconDefault: '#9BA1A6',
+    icon: '#727374',
+    tabIconDefault: '#4F5051',
     tabIconSelected: accent,
     border: '#2C2F30',
   },

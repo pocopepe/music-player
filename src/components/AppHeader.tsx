@@ -1,4 +1,5 @@
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Colors } from '../../constants/theme';
 
@@ -12,7 +13,7 @@ export default function AppHeader() {
         <Text style={styles.appName}>Mume</Text>
       </View>
       <TouchableOpacity>
-        <Text style={styles.searchIcon}>⌕</Text>
+        <Ionicons name="search-outline" size={24} color={Colors.light.text} />
       </TouchableOpacity>
     </View>
   );
@@ -39,10 +40,6 @@ const styles = StyleSheet.create({
   appName: {
     fontSize: 20,
     fontWeight: '700',
-    color: Colors.light.text,
-  },
-  searchIcon: {
-    fontSize: 24,
     color: Colors.light.text,
   },
 });
