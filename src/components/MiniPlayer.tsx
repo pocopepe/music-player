@@ -1,8 +1,9 @@
-import { View, Text, Image, TouchableOpacity, StyleSheet } from 'react-native';
+import { Text, Image, TouchableOpacity, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '../../constants/theme';
 import { usePlayerStore } from '../store/playerStore';
 import { togglePlayPause } from '../services/audioService';
+import { navigationRef } from '../navigation/navigationRef';
 
 export default function MiniPlayer() {
   const { currentSong, isPlaying } = usePlayerStore();
@@ -14,7 +15,7 @@ export default function MiniPlayer() {
   const title = `${currentSong.name} - ${artists}`;
 
   return (
-    <View style={styles.container}>
+    <TouchableOpacity style={styles.container} onPress={() => navigationRef.navigate('Player')} activeOpacity={0.95}>
       <Image source={{ uri: imageUrl }} style={styles.image} />
       <Text style={styles.title} numberOfLines={1}>{title}</Text>
       <TouchableOpacity onPress={togglePlayPause} style={styles.btn}>
@@ -27,7 +28,7 @@ export default function MiniPlayer() {
       <TouchableOpacity style={styles.btn}>
         <Ionicons name="play-skip-forward" size={24} color={Colors.accent} />
       </TouchableOpacity>
-    </View>
+    </TouchableOpacity>
   );
 }
 

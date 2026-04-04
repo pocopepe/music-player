@@ -6,6 +6,7 @@ import FavoritesScreen from '../screens/FavoritesScreen';
 import PlaylistsScreen from '../screens/PlaylistsScreen';
 import SettingsScreen from '../screens/SettingsScreen';
 import SearchScreen from '../screens/SearchScreen';
+import PlayerScreen from '../screens/PlayerScreen';
 import { Colors } from '../../constants/theme';
 
 const Tab = createBottomTabNavigator();
@@ -66,6 +67,7 @@ export default function RootNavigator() {
     <Stack.Navigator screenOptions={{ headerShown: false }}>
       <Stack.Screen name="Tabs" component={TabNavigator} />
       <Stack.Screen name="Search" component={SearchScreen} />
+      <Stack.Screen name="Player" component={PlayerScreen} />
     </Stack.Navigator>
   );
 }

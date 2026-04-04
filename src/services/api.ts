@@ -22,17 +22,34 @@ async function get<T>(path: string): Promise<T> {
   return res.json();
 }
 
+export type Artist = {
+  id: string;
+  name: string;
+  image: { quality: string; url: string }[];
+  followerCount?: number;
+};
+
+export type Album = {
+  id: string;
+  name: string;
+  artists: { primary: { id: string; name: string }[] };
+  image: { quality: string; url: string }[];
+  year?: string;
+};
+
 export async function searchSongs(query: string, page = 1): Promise<{ results: Song[]; total: number }> {
   const data = await get<any>(`/api/search/songs?query=${encodeURIComponent(query)}&page=${page}`);
   return data.data;
 }
 
-export async function getSongById(id: string): Promise<Song> {
-  const data = await get<any>(`/api/songs/${id}`);
-  return data.data[0];
-}
-
-export async function getSongSuggestions(id: string): Promise<Song[]> {
-  const data = await get<any>(`/api/songs/${id}/suggestions`);
+export async function searchArtists(query: string, page = 1): Promise<{ results: Artist[]; total: number }> {
+  const data = await get<any>(`/api/search/artists?query=${encodeURIComponent(query)}&page=${page}`);
   return data.data;
 }
+
+export async function searchAlbums(query: string, page = 1): Promise<{ results: Album[]; total: number }> {
+  const data = await get<any>(`/api/search/albums?query=${encodeURIComponent(query)}&page=${page}`);
+  return data.data;
+}
+
+
