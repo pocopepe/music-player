@@ -46,3 +46,6 @@ app-example
 .claude/
 CLAUDE.md
 memory/
+
+# Assignment PDF
+*.pdf
