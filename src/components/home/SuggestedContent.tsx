@@ -1,6 +1,7 @@
 import { ScrollView, View, Text, Image, TouchableOpacity, StyleSheet } from 'react-native';
 import { Colors } from '../../../constants/theme';
 import { Song } from '../../services/api';
+import { playSong } from '../../services/audioService';
 
 type Artist = {
   id: string;
@@ -28,7 +29,7 @@ function SongCard({ song }: { song: Song }) {
   const imageUrl = song.image?.find(i => i.quality === '150x150')?.url;
   const artists = song.artists.primary.map((a) => a.name).join(', ');
   return (
-    <TouchableOpacity style={styles.songCard}>
+    <TouchableOpacity style={styles.songCard} onPress={() => playSong(song)}>
       <Image source={{ uri: imageUrl }} style={styles.songImage} />
       <Text style={styles.songName} numberOfLines={1}>{song.name}</Text>
       <Text style={styles.songArtist} numberOfLines={1}>{artists}</Text>
@@ -69,7 +70,10 @@ export default function SuggestedContent({ recentlyPlayed, mostPlayed }: Props) 
   const artists = extractArtists([...recentlyPlayed, ...mostPlayed]);
 
   return (
-    <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.container}>
+    <ScrollView
+      showsVerticalScrollIndicator={false}
+      contentContainerStyle={styles.container}
+    >
       <SectionHeader title="Recently Played" onSeeAll={() => {}} />
       <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.row}>
         {recentlyPlayed.map((song) => (
@@ -96,7 +100,7 @@ export default function SuggestedContent({ recentlyPlayed, mostPlayed }: Props) 
 
 const styles = StyleSheet.create({
   container: {
-    paddingBottom: 24,
+    paddingBottom: 160,
   },
   sectionHeader: {
     flexDirection: 'row',
@@ -141,13 +145,13 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
   artistCard: {
-    width: 100,
+    width: 140,
     alignItems: 'center',
   },
   artistImage: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
+    width: 140,
+    height: 140,
+    borderRadius: 70,
     backgroundColor: Colors.light.card,
     marginBottom: 8,
   },
