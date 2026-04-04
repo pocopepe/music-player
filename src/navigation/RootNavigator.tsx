@@ -1,14 +1,17 @@
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
 import HomeScreen from '../screens/HomeScreen';
 import FavoritesScreen from '../screens/FavoritesScreen';
 import PlaylistsScreen from '../screens/PlaylistsScreen';
 import SettingsScreen from '../screens/SettingsScreen';
+import SearchScreen from '../screens/SearchScreen';
 import { Colors } from '../../constants/theme';
 
 const Tab = createBottomTabNavigator();
+const Stack = createNativeStackNavigator();
 
-export default function RootNavigator() {
+function TabNavigator() {
   return (
     <Tab.Navigator
       screenOptions={({ route }) => ({
@@ -20,8 +23,8 @@ export default function RootNavigator() {
           fontWeight: '500',
         },
         tabBarStyle: {
-          borderTopLeftRadius: 24,
-          borderTopRightRadius: 24,
+          borderTopLeftRadius: 10,
+          borderTopRightRadius: 10,
           borderTopWidth: 0,
           backgroundColor: Colors.light.background,
           shadowColor: '#000',
@@ -29,9 +32,9 @@ export default function RootNavigator() {
           shadowOpacity: 0.08,
           shadowRadius: 12,
           elevation: 12,
-          height: 70,
-          paddingBottom: 12,
-          paddingTop: 10,
+          height: 85,
+          paddingBottom: 16,
+          paddingTop: 12,
           position: 'absolute',
         },
         tabBarIcon: ({ focused, color, size }) => {
@@ -55,5 +58,14 @@ export default function RootNavigator() {
       <Tab.Screen name="Playlists" component={PlaylistsScreen} />
       <Tab.Screen name="Settings" component={SettingsScreen} />
     </Tab.Navigator>
+  );
+}
+
+export default function RootNavigator() {
+  return (
+    <Stack.Navigator screenOptions={{ headerShown: false }}>
+      <Stack.Screen name="Tabs" component={TabNavigator} />
+      <Stack.Screen name="Search" component={SearchScreen} />
+    </Stack.Navigator>
   );
 }

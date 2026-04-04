@@ -1,0 +1,347 @@
+import { useState } from 'react';
+import {
+  View,
+  Text,
+  Image,
+  TextInput,
+  TouchableOpacity,
+  FlatList,
+  ScrollView,
+  ActivityIndicator,
+  StyleSheet,
+} from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Colors } from '../../constants/theme';
+import { searchSongs, Song } from '../services/api';
+import {
+  getRecentSearches,
+  addRecentSearch,
+  removeRecentSearch,
+  clearRecentSearches,
+} from '../storage/storage';
+
+const FILTER_CHIPS = ['Songs', 'Artists', 'Albums', 'Folders'];
+
+export default function SearchScreen({ navigation }: any) {
+  const insets = useSafeAreaInsets();
+  const [query, setQuery] = useState('');
+  const [activeChip, setActiveChip] = useState('Songs');
+  const [recents, setRecents] = useState<string[]>(getRecentSearches);
+  const [results, setResults] = useState<Song[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [searched, setSearched] = useState(false);
+  const [focused, setFocused] = useState(true);
+
+  function handleRemove(item: string) {
+    removeRecentSearch(item);
+    setRecents(getRecentSearches());
+  }
+
+  function handleClearAll() {
+    clearRecentSearches();
+    setRecents([]);
+  }
+
+  function handleChangeText(text: string) {
+    setQuery(text);
+    if (!text) {
+      setResults([]);
+      setSearched(false);
+    }
+  }
+
+  async function handleSubmit() {
+    if (!query.trim()) return;
+    console.log('Searching for:', query.trim());
+    addRecentSearch(query.trim());
+    setRecents(getRecentSearches());
+    setLoading(true);
+    setSearched(false);
+    try {
+      const data = await searchSongs(query.trim());
+      console.log('Results:', data.results.length);
+      setResults(data.results);
+    } catch (err) {
+      console.log('Search error:', err);
+      setResults([]);
+    } finally {
+      setLoading(false);
+      setSearched(true);
+    }
+  }
+
+  const isTyping = query.length > 0;
+  const notFound = searched && results.length === 0;
+
+  return (
+    <View style={[styles.container, { paddingTop: insets.top }]}>
+      <View style={styles.header}>
+        <TouchableOpacity onPress={() => navigation.goBack()}>
+          <Ionicons name="arrow-back" size={24} color={Colors.light.text} />
+        </TouchableOpacity>
+        <View style={[styles.inputWrapper, focused && styles.inputWrapperFocused]}>
+          <Ionicons name="search" size={18} color={focused ? Colors.accent : Colors.light.subtext} />
+          <TextInput
+            style={styles.input}
+            placeholder="Search"
+            placeholderTextColor={Colors.light.subtext}
+            value={query}
+            onChangeText={handleChangeText}
+            onSubmitEditing={handleSubmit}
+            onFocus={() => setFocused(true)}
+            onBlur={() => setFocused(false)}
+            returnKeyType="search"
+            autoFocus
+          />
+          {isTyping && (
+            <TouchableOpacity onPress={() => { setQuery(''); setResults([]); setSearched(false); }}>
+              <Ionicons name="close" size={18} color={Colors.light.subtext} />
+            </TouchableOpacity>
+          )}
+        </View>
+      </View>
+
+      {isTyping && (
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          style={styles.chipsScroll}
+          contentContainerStyle={styles.chipsRow}
+        >
+          {FILTER_CHIPS.map((chip) => {
+            const active = chip === activeChip;
+            return (
+              <TouchableOpacity
+                key={chip}
+                onPress={() => setActiveChip(chip)}
+                style={[styles.chip, active && styles.chipActive]}
+              >
+                <Text style={[styles.chipText, active && styles.chipTextActive]}>{chip}</Text>
+              </TouchableOpacity>
+            );
+          })}
+        </ScrollView>
+      )}
+
+      {!isTyping && recents.length > 0 && (
+        <>
+          <View style={styles.recentHeader}>
+            <Text style={styles.recentTitle}>Recent Searches</Text>
+            <TouchableOpacity onPress={handleClearAll}>
+              <Text style={styles.clearAll}>Clear All</Text>
+            </TouchableOpacity>
+          </View>
+          <View style={styles.divider} />
+          <FlatList
+            data={recents}
+            keyExtractor={(item) => item}
+            renderItem={({ item }) => (
+              <View style={styles.recentItem}>
+                <Text style={styles.recentText}>{item}</Text>
+                <TouchableOpacity onPress={() => handleRemove(item)}>
+                  <Ionicons name="close" size={18} color="#D9D9D9" />
+                </TouchableOpacity>
+              </View>
+            )}
+          />
+        </>
+      )}
+
+      {loading && (
+        <View style={styles.centered}>
+          <ActivityIndicator color={Colors.accent} size="large" />
+        </View>
+      )}
+
+      {!loading && isTyping && results.length > 0 && (
+        <FlatList
+          data={results}
+          keyExtractor={(item) => item.id}
+          renderItem={({ item }) => {
+            const imageUrl = item.image?.find(i => i.quality === '150x150')?.url;
+            return (
+              <View style={styles.resultItem}>
+                <Image source={{ uri: imageUrl }} style={styles.resultImage} />
+                <View style={styles.resultInfo}>
+                  <Text style={styles.resultName} numberOfLines={1}>{item.name}</Text>
+                  <Text style={styles.resultArtist} numberOfLines={1}>
+                    {item.artists.primary.map((a) => a.name).join(', ')}
+                  </Text>
+                </View>
+                <TouchableOpacity style={styles.playButton}>
+                  <Ionicons name="play-circle" size={36} color={Colors.accent} />
+                </TouchableOpacity>
+                <TouchableOpacity>
+                  <Ionicons name="ellipsis-vertical" size={20} color={Colors.light.subtext} />
+                </TouchableOpacity>
+              </View>
+            );
+          }}
+        />
+      )}
+
+      {!loading && notFound && (
+        <View style={styles.notFound}>
+          <Text style={styles.notFoundEmoji}>😞</Text>
+          <Text style={styles.notFoundTitle}>Not Found</Text>
+          <Text style={styles.notFoundSubtext}>
+            Sorry, the keyword you entered cannot be found, please check again or search with another keyword.
+          </Text>
+        </View>
+      )}
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: Colors.light.background,
+  },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingBottom: 16,
+    gap: 12,
+  },
+  inputWrapper: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: Colors.light.card,
+    borderWidth: 1.5,
+    borderColor: Colors.light.border,
+    borderRadius: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    gap: 8,
+  },
+  inputWrapperFocused: {
+    backgroundColor: '#FFF3E8',
+    borderColor: Colors.accent,
+  },
+  input: {
+    flex: 1,
+    fontSize: 15,
+    color: Colors.light.text,
+  },
+  chipsScroll: {
+    flexGrow: 0,
+  },
+  chipsRow: {
+    paddingHorizontal: 16,
+    gap: 10,
+    paddingBottom: 16,
+  },
+  chip: {
+    borderWidth: 1.5,
+    borderColor: Colors.accent,
+    borderRadius: 20,
+    paddingHorizontal: 18,
+    paddingVertical: 7,
+  },
+  chipActive: {
+    backgroundColor: Colors.accent,
+  },
+  chipText: {
+    fontSize: 14,
+    fontWeight: '500',
+    color: Colors.accent,
+  },
+  chipTextActive: {
+    color: '#fff',
+  },
+  recentHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    marginBottom: 12,
+  },
+  recentTitle: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: Colors.light.text,
+  },
+  clearAll: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: Colors.accent,
+  },
+  divider: {
+    height: 1,
+    backgroundColor: Colors.light.border,
+    marginBottom: 4,
+  },
+  recentItem: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+  },
+  recentText: {
+    fontSize: 15,
+    color: '#555555',
+  },
+  centered: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  resultItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    gap: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.light.border,
+  },
+  resultImage: {
+    width: 56,
+    height: 56,
+    borderRadius: 8,
+    backgroundColor: Colors.light.card,
+  },
+  resultInfo: {
+    flex: 1,
+  },
+  playButton: {
+    padding: 4,
+  },
+  resultName: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: Colors.light.text,
+  },
+  resultArtist: {
+    fontSize: 13,
+    color: Colors.light.subtext,
+    marginTop: 2,
+  },
+  notFound: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 32,
+    gap: 16,
+  },
+  notFoundEmoji: {
+    fontSize: 120,
+  },
+  notFoundTitle: {
+    fontSize: 24,
+    fontWeight: '700',
+    color: Colors.light.text,
+    textAlign: 'center',
+  },
+  notFoundSubtext: {
+    fontSize: 16,
+    color: Colors.light.subtext,
+    textAlign: 'center',
+    lineHeight: 26,
+  },
+});

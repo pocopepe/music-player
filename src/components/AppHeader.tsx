@@ -1,10 +1,12 @@
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useNavigation } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Colors } from '../../constants/theme';
 
 export default function AppHeader() {
   const insets = useSafeAreaInsets();
+  const navigation = useNavigation<any>();
 
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
@@ -12,7 +14,7 @@ export default function AppHeader() {
         <Text style={styles.logo}>♪</Text>
         <Text style={styles.appName}>Mume</Text>
       </View>
-      <TouchableOpacity>
+      <TouchableOpacity onPress={() => navigation.navigate('Search')}>
         <Ionicons name="search-outline" size={24} color={Colors.light.text} />
       </TouchableOpacity>
     </View>

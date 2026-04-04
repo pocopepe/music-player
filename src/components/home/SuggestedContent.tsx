@@ -1,17 +1,11 @@
 import { ScrollView, View, Text, Image, TouchableOpacity, StyleSheet } from 'react-native';
 import { Colors } from '../../../constants/theme';
-
-type Song = {
-  id: string;
-  name: string;
-  primaryArtists: string;
-  image: string;
-};
+import { Song } from '../../services/api';
 
 type Artist = {
   id: string;
   name: string;
-  image: string;
+  imageUrl: string;
 };
 
 type SectionProps = {
@@ -31,11 +25,13 @@ function SectionHeader({ title, onSeeAll }: SectionProps) {
 }
 
 function SongCard({ song }: { song: Song }) {
+  const imageUrl = song.image?.find(i => i.quality === '150x150')?.url;
+  const artists = song.artists.primary.map((a) => a.name).join(', ');
   return (
     <TouchableOpacity style={styles.songCard}>
-      <Image source={{ uri: song.image }} style={styles.songImage} />
+      <Image source={{ uri: imageUrl }} style={styles.songImage} />
       <Text style={styles.songName} numberOfLines={1}>{song.name}</Text>
-      <Text style={styles.songArtist} numberOfLines={1}>{song.primaryArtists}</Text>
+      <Text style={styles.songArtist} numberOfLines={1}>{artists}</Text>
     </TouchableOpacity>
   );
 }
@@ -43,19 +39,35 @@ function SongCard({ song }: { song: Song }) {
 function ArtistCard({ artist }: { artist: Artist }) {
   return (
     <TouchableOpacity style={styles.artistCard}>
-      <Image source={{ uri: artist.image }} style={styles.artistImage} />
+      <Image source={{ uri: artist.imageUrl }} style={styles.artistImage} />
       <Text style={styles.artistName} numberOfLines={1}>{artist.name}</Text>
     </TouchableOpacity>
   );
 }
 
+function extractArtists(songs: Song[]): Artist[] {
+  const seen = new Set<string>();
+  const artists: Artist[] = [];
+  for (const song of songs) {
+    for (const a of song.artists.primary) {
+      if (!seen.has(a.id)) {
+        seen.add(a.id);
+        const imageUrl = (a as any).image?.find((i: any) => i.quality === '150x150')?.url ?? '';
+        artists.push({ id: a.id, name: a.name, imageUrl });
+      }
+    }
+  }
+  return artists.slice(0, 10);
+}
+
 type Props = {
   recentlyPlayed: Song[];
-  artists: Artist[];
   mostPlayed: Song[];
 };
 
-export default function SuggestedContent({ recentlyPlayed, artists, mostPlayed }: Props) {
+export default function SuggestedContent({ recentlyPlayed, mostPlayed }: Props) {
+  const artists = extractArtists([...recentlyPlayed, ...mostPlayed]);
+
   return (
     <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.container}>
       <SectionHeader title="Recently Played" onSeeAll={() => {}} />

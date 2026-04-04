@@ -1,4 +1,4 @@
-const BASE_URL = 'https://saavn.sumit.co';
+const BASE_URL = 'https://jiosaavn-api.avijusanjai.workers.dev';
 
 export type Song = {
   id: string;
