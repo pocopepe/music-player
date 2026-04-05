@@ -8,6 +8,8 @@ import SettingsScreen from '../screens/SettingsScreen';
 import SearchScreen from '../screens/SearchScreen';
 import PlayerScreen from '../screens/PlayerScreen';
 import QueueScreen from '../screens/QueueScreen';
+import AlbumScreen from '../screens/AlbumScreen';
+import ArtistScreen from '../screens/ArtistScreen';
 import { Colors } from '../../constants/theme';
 
 const Tab = createBottomTabNavigator();
@@ -70,6 +72,8 @@ export default function RootNavigator() {
       <Stack.Screen name="Search" component={SearchScreen} />
       <Stack.Screen name="Player" component={PlayerScreen} />
       <Stack.Screen name="Queue" component={QueueScreen} />
+      <Stack.Screen name="Album" component={AlbumScreen} />
+      <Stack.Screen name="Artist" component={ArtistScreen} />
     </Stack.Navigator>
   );
 }

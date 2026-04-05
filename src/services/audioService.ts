@@ -1,6 +1,7 @@
 import { Audio } from 'expo-av';
 import { Song } from './api';
 import { usePlayerStore } from '../store/playerStore';
+import { addRecentlyPlayed, incrementPlayCount } from '../storage/storage';
 
 let soundInstance: Audio.Sound | null = null;
 
@@ -34,6 +35,8 @@ export async function playSong(song: Song, queue?: Song[]) {
   soundInstance = sound;
   setCurrentSong(song);
   setIsPlaying(true);
+  addRecentlyPlayed(song);
+  incrementPlayCount(song);
 
   if (queue) setQueue(queue);
   else if (!currentQueue.find(s => s.id === song.id)) {

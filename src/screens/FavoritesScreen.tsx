@@ -55,7 +55,7 @@ export default function FavoritesScreen() {
 
   function handlePlay(item: Song) {
     if (currentSong?.id === item.id) togglePlayPause();
-    else playSong(item, songs);
+    else playSong(item);
   }
 
   function handleUnlike(item: Song) {

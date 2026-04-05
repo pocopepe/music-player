@@ -5,7 +5,7 @@ import { usePlayerStore } from '../store/playerStore';
 import { togglePlayPause, playNext } from '../services/audioService';
 import { navigationRef } from '../navigation/navigationRef';
 
-export default function MiniPlayer() {
+export default function MiniPlayer({ bottom = 85 }: { bottom?: number }) {
   const { currentSong, isPlaying } = usePlayerStore();
 
   if (!currentSong) return null;
@@ -15,7 +15,7 @@ export default function MiniPlayer() {
   const title = `${currentSong.name} - ${artists}`;
 
   return (
-    <TouchableOpacity style={styles.container} onPress={() => navigationRef.navigate('Player')} activeOpacity={0.95}>
+    <TouchableOpacity style={[styles.container, { bottom }]} onPress={() => navigationRef.navigate('Player')} activeOpacity={0.95}>
       <Image source={{ uri: imageUrl }} style={styles.image} />
       <Text style={styles.title} numberOfLines={1}>{title}</Text>
       <TouchableOpacity onPress={togglePlayPause} style={styles.btn}>

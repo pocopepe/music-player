@@ -25,7 +25,7 @@ export default function LocalSongsContent() {
 
   function handlePlay(item: Song) {
     if (currentSong?.id === item.id) togglePlayPause();
-    else playSong(item, songs);
+    else playSong(item);
   }
 
   async function handleDelete() {

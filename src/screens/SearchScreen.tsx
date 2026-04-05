@@ -34,6 +34,7 @@ export default function SearchScreen({ navigation }: any) {
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(0);
   const [menuSong, setMenuSong] = useState<Song | null>(null);
+  const [menuAlbum, setMenuAlbum] = useState<Album | null>(null);
   const [isLiked, setIsLiked] = useState(false);
   const { downloadedIds, refresh } = useDownloadStore();
 
@@ -182,7 +183,7 @@ export default function SearchScreen({ navigation }: any) {
     activeChip === 'Songs' ? songResults :
     activeChip === 'Artists' ? artistResults : albumResults;
 
-  const notFound = searched && activeResults.length === 0;
+  const notFound = searched && activeResults.length === 0 && activeChip !== 'Folders';
 
   function renderSong({ item }: { item: Song }) {
     const imageUrl = item.image?.find(i => i.quality === '150x150')?.url;
@@ -224,13 +225,16 @@ export default function SearchScreen({ navigation }: any) {
     const imageUrl = item.image?.find(i => i.quality === '150x150')?.url;
     const artist = item.artists?.primary?.[0]?.name ?? '';
     return (
-      <View style={styles.resultItem}>
+      <TouchableOpacity style={styles.resultItem} onPress={() => navigation.navigate('Album', { albumId: item.id })}>
         <Image source={{ uri: imageUrl }} style={styles.resultImage} />
         <View style={styles.resultInfo}>
           <Text style={styles.resultName} numberOfLines={1}>{item.name}</Text>
           <Text style={styles.resultSub} numberOfLines={1}>{artist}{item.year ? ` · ${item.year}` : ''}</Text>
         </View>
-      </View>
+        <TouchableOpacity onPress={() => setMenuAlbum(item)}>
+          <Ionicons name="ellipsis-vertical" size={20} color={Colors.light.subtext} />
+        </TouchableOpacity>
+      </TouchableOpacity>
     );
   }
 
@@ -369,6 +373,37 @@ export default function SearchScreen({ navigation }: any) {
                   menuSong && downloadedIds.has(menuSong.id)
                     ? { icon: 'trash-outline', label: 'Delete from Device', action: handleDeleteDownload }
                     : { icon: 'download-outline', label: 'Download to Device', action: handleDownload },
+                ].map(({ icon, label, action }) => (
+                  <TouchableOpacity key={label} style={styles.sheetOption} onPress={action}>
+                    <Ionicons name={icon as any} size={22} color={Colors.light.text} />
+                    <Text style={styles.sheetOptionText}>{label}</Text>
+                  </TouchableOpacity>
+                ))}
+              </>
+            )}
+          </View>
+        </TouchableOpacity>
+      </Modal>
+
+      <Modal transparent visible={!!menuAlbum} animationType="slide" onRequestClose={() => setMenuAlbum(null)}>
+        <TouchableOpacity style={styles.sheetOverlay} activeOpacity={1} onPress={() => setMenuAlbum(null)}>
+          <View style={styles.sheet}>
+            {menuAlbum && (
+              <>
+                <View style={styles.sheetSongRow}>
+                  <Image source={{ uri: menuAlbum.image?.find(i => i.quality === '150x150')?.url }} style={styles.sheetImage} />
+                  <View style={styles.sheetInfo}>
+                    <Text style={styles.sheetName} numberOfLines={1}>{menuAlbum.name}</Text>
+                    <Text style={styles.sheetArtist} numberOfLines={1}>
+                      {menuAlbum.artists?.primary?.[0]?.name ?? ''}{menuAlbum.year ? ` · ${menuAlbum.year}` : ''}
+                    </Text>
+                  </View>
+                </View>
+                <View style={styles.sheetDivider} />
+                {[
+                  { icon: 'play-circle-outline', label: 'Open Album', action: () => { navigation.navigate('Album', { albumId: menuAlbum.id }); setMenuAlbum(null); } },
+                  { icon: 'download-outline', label: 'Download Album', action: () => { navigation.navigate('Album', { albumId: menuAlbum.id }); setMenuAlbum(null); } },
+                  { icon: 'paper-plane-outline', label: 'Share', action: () => setMenuAlbum(null) },
                 ].map(({ icon, label, action }) => (
                   <TouchableOpacity key={label} style={styles.sheetOption} onPress={action}>
                     <Ionicons name={icon as any} size={22} color={Colors.light.text} />

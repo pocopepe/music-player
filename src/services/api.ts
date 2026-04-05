@@ -1,4 +1,4 @@
-const BASE_URL = 'https://jiosaavn-api.avijusanjai.workers.dev';
+const BASE_URL = 'https://saavn.sumit.co';
 
 export type Song = {
   id: string;
@@ -60,6 +60,15 @@ export async function searchArtists(query: string, page = 1): Promise<{ results:
 export async function searchAlbums(query: string, page = 1): Promise<{ results: Album[]; total: number }> {
   const data = await get<any>(`/api/search/albums?query=${encodeURIComponent(query)}&page=${page}`);
   return data.data;
+}
+
+export async function getAlbum(id: string): Promise<{ name: string; artists: { primary: { id: string; name: string }[] }; image: { quality: string; url: string }[]; songs: Song[] } | null> {
+  try {
+    const data = await get<any>(`/api/albums?id=${id}`);
+    return data.data;
+  } catch {
+    return null;
+  }
 }
 
 

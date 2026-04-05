@@ -1,9 +1,11 @@
-import { View, Text, FlatList, Image, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, Image, TouchableOpacity, StyleSheet } from 'react-native';
+import DraggableFlatList, { RenderItemParams, ScaleDecorator } from 'react-native-draggable-flatlist';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Colors } from '../../constants/theme';
 import { usePlayerStore } from '../store/playerStore';
 import { playSong } from '../services/audioService';
+import { Song } from '../services/api';
 
 function formatDuration(seconds: number): string {
   const m = Math.floor(seconds / 60);
@@ -13,8 +15,51 @@ function formatDuration(seconds: number): string {
 
 export default function QueueScreen({ navigation }: any) {
   const insets = useSafeAreaInsets();
-  const { queue, currentSong, removeFromQueueAt } = usePlayerStore();
+  const { queue, currentSong, setQueue, removeFromQueueAt } = usePlayerStore();
   const currentIndex = queue.findIndex(s => s.id === currentSong?.id);
+
+  function renderItem({ item, drag, isActive, getIndex }: RenderItemParams<Song>) {
+    const index = getIndex() ?? 0;
+    const imageUrl = item.image?.find(i => i.quality === '150x150')?.url;
+    const artists = item.artists.primary.map(a => a.name).join(', ');
+    const isActive2 = currentSong?.id === item.id;
+    const isPast = index < currentIndex;
+    const canInteract = index > currentIndex;
+
+    return (
+      <ScaleDecorator>
+        <TouchableOpacity
+          style={[styles.row, isActive2 && styles.activeRow, isActive && styles.dragging]}
+          onPress={() => playSong(item)}
+          onLongPress={canInteract ? drag : undefined}
+          disabled={isActive}
+        >
+          <Text style={[styles.index, isActive2 && { color: Colors.accent }]}>
+            {isActive2 ? '▶' : index + 1}
+          </Text>
+          <Image source={{ uri: imageUrl }} style={styles.image} />
+          <View style={styles.info}>
+            <Text style={[styles.name, isActive2 && styles.activeName, isPast && styles.pastName]} numberOfLines={1}>
+              {item.name}
+            </Text>
+            <Text style={styles.meta} numberOfLines={1}>{artists} · {formatDuration(item.duration)}</Text>
+          </View>
+          {canInteract ? (
+            <>
+              <TouchableOpacity onPress={() => removeFromQueueAt(index)} style={styles.btn}>
+                <Ionicons name="close" size={20} color={Colors.light.subtext} />
+              </TouchableOpacity>
+              <TouchableOpacity onLongPress={drag} style={styles.btn}>
+                <Ionicons name="reorder-three" size={22} color={Colors.light.subtext} />
+              </TouchableOpacity>
+            </>
+          ) : (
+            <View style={styles.btnPlaceholder} />
+          )}
+        </TouchableOpacity>
+      </ScaleDecorator>
+    );
+  }
 
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
@@ -33,30 +78,12 @@ export default function QueueScreen({ navigation }: any) {
           <Text style={styles.emptySubtext}>Add songs from the three-dot menu on any song</Text>
         </View>
       ) : (
-        <FlatList
+        <DraggableFlatList
           data={queue}
-          keyExtractor={item => item.id}
+          keyExtractor={(item, index) => `${item.id}-${index}`}
+          onDragEnd={({ data }) => setQueue(data)}
+          renderItem={renderItem}
           contentContainerStyle={{ paddingBottom: 40 }}
-          renderItem={({ item, index }) => {
-            const imageUrl = item.image?.find(i => i.quality === '150x150')?.url;
-            const artists = item.artists.primary.map(a => a.name).join(', ');
-            const isActive = currentSong?.id === item.id;
-            return (
-              <TouchableOpacity style={[styles.row, isActive && styles.activeRow]} onPress={() => playSong(item)}>
-                <Text style={styles.index}>{isActive ? '▶' : index + 1}</Text>
-                <Image source={{ uri: imageUrl }} style={styles.image} />
-                <View style={styles.info}>
-                  <Text style={[styles.name, isActive && styles.activeName]} numberOfLines={1}>{item.name}</Text>
-                  <Text style={styles.meta} numberOfLines={1}>{artists} · {formatDuration(item.duration)}</Text>
-                </View>
-                {index > currentIndex && (
-                  <TouchableOpacity onPress={() => removeFromQueueAt(index)} style={styles.removeBtn}>
-                    <Ionicons name="close" size={20} color={Colors.light.subtext} />
-                  </TouchableOpacity>
-                )}
-              </TouchableOpacity>
-            );
-          }}
         />
       )}
     </View>
@@ -73,11 +100,14 @@ const styles = StyleSheet.create({
   emptySubtext: { fontSize: 14, color: Colors.light.subtext, textAlign: 'center' },
   row: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 20, paddingVertical: 10, gap: 12 },
   activeRow: { backgroundColor: Colors.light.card },
+  dragging: { opacity: 0.9, backgroundColor: Colors.light.card },
   index: { width: 24, fontSize: 13, color: Colors.light.subtext, textAlign: 'center' },
   image: { width: 52, height: 52, borderRadius: 8, backgroundColor: Colors.light.card },
   info: { flex: 1 },
   name: { fontSize: 15, fontWeight: '600', color: Colors.light.text, marginBottom: 3 },
   activeName: { color: Colors.accent },
+  pastName: { opacity: 0.4 },
   meta: { fontSize: 13, color: Colors.light.subtext },
-  removeBtn: { padding: 4 },
+  btn: { padding: 4 },
+  btnPlaceholder: { width: 28 },
 });

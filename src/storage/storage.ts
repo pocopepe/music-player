@@ -69,6 +69,37 @@ export function isDownloaded(id: string): boolean {
   return getDownloadedSongs().some((s: any) => s.id === id);
 }
 
+const RECENTLY_PLAYED_KEY = 'recently_played';
+
+export function getRecentlyPlayed(): any[] {
+  const raw = storage.getString(RECENTLY_PLAYED_KEY);
+  return raw ? JSON.parse(raw) : [];
+}
+
+export function addRecentlyPlayed(song: any): void {
+  const current = getRecentlyPlayed().filter((s: any) => s.id !== song.id);
+  storage.set(RECENTLY_PLAYED_KEY, JSON.stringify([song, ...current].slice(0, 50)));
+}
+
+const PLAY_COUNTS_KEY = 'play_counts';
+
+export function incrementPlayCount(song: any): void {
+  const raw = storage.getString(PLAY_COUNTS_KEY);
+  const counts: Record<string, { song: any; count: number }> = raw ? JSON.parse(raw) : {};
+  counts[song.id] = { song, count: (counts[song.id]?.count ?? 0) + 1 };
+  storage.set(PLAY_COUNTS_KEY, JSON.stringify(counts));
+}
+
+export function getMostPlayed(limit = 10): any[] {
+  const raw = storage.getString(PLAY_COUNTS_KEY);
+  if (!raw) return [];
+  const counts: Record<string, { song: any; count: number }> = JSON.parse(raw);
+  return Object.values(counts)
+    .sort((a, b) => b.count - a.count)
+    .slice(0, limit)
+    .map(e => e.song);
+}
+
 const QUEUE_KEY = 'queue';
 
 export function getPersistedQueue(): any[] {

@@ -77,7 +77,7 @@ export default function SongsContent({ songs, query }: Props) {
     if (currentSong?.id === item.id) {
       togglePlayPause();
     } else {
-      playSong(item, sortedSongs);
+      playSong(item);
     }
   }
 
