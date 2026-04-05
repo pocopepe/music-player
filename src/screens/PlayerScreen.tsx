@@ -4,7 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Colors } from '../../constants/theme';
 import { usePlayerStore } from '../store/playerStore';
-import { togglePlayPause, seekTo } from '../services/audioService';
+import { togglePlayPause, seekTo, playNext, playPrev } from '../services/audioService';
 
 function formatTime(seconds: number): string {
   const m = Math.floor(seconds / 60);
@@ -62,7 +62,7 @@ export default function PlayerScreen({ navigation }: any) {
       </View>
 
       <View style={styles.controls}>
-        <TouchableOpacity>
+        <TouchableOpacity onPress={playPrev}>
           <Ionicons name="play-skip-back" size={28} color={Colors.light.text} />
         </TouchableOpacity>
         <TouchableOpacity onPress={() => seekTo(Math.max(0, position - 10))}>
@@ -80,7 +80,7 @@ export default function PlayerScreen({ navigation }: any) {
             <Text style={styles.skipLabel}>10</Text>
           </View>
         </TouchableOpacity>
-        <TouchableOpacity>
+        <TouchableOpacity onPress={playNext}>
           <Ionicons name="play-skip-forward" size={28} color={Colors.light.text} />
         </TouchableOpacity>
       </View>

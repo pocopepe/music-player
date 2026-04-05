@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import {
   View, Text, Image, TextInput, TouchableOpacity,
-  FlatList, ScrollView, ActivityIndicator, StyleSheet,
+  FlatList, ScrollView, ActivityIndicator, StyleSheet, Modal,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -29,6 +29,7 @@ export default function SearchScreen({ navigation }: any) {
   const [focused, setFocused] = useState(true);
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(0);
+  const [menuSong, setMenuSong] = useState<Song | null>(null);
 
   function handleRemove(item: string) {
     removeRecentSearch(item);
@@ -164,7 +165,7 @@ export default function SearchScreen({ navigation }: any) {
         <TouchableOpacity style={styles.playButton} onPress={() => playSong(item)}>
           <Ionicons name="play-circle" size={36} color={Colors.accent} />
         </TouchableOpacity>
-        <TouchableOpacity>
+        <TouchableOpacity onPress={() => setMenuSong(item)}>
           <Ionicons name="ellipsis-vertical" size={20} color={Colors.light.subtext} />
         </TouchableOpacity>
       </View>
@@ -305,6 +306,42 @@ export default function SearchScreen({ navigation }: any) {
           </Text>
         </View>
       )}
+
+      <Modal transparent visible={!!menuSong} animationType="slide" onRequestClose={() => setMenuSong(null)}>
+        <TouchableOpacity style={styles.sheetOverlay} activeOpacity={1} onPress={() => setMenuSong(null)}>
+          <View style={styles.sheet}>
+            {menuSong && (
+              <>
+                <View style={styles.sheetSongRow}>
+                  <Image source={{ uri: menuSong.image?.find(i => i.quality === '150x150')?.url }} style={styles.sheetImage} />
+                  <View style={styles.sheetInfo}>
+                    <Text style={styles.sheetName} numberOfLines={1}>{menuSong.name}</Text>
+                    <Text style={styles.sheetArtist} numberOfLines={1}>{menuSong.artists.primary.map(a => a.name).join(', ')}</Text>
+                  </View>
+                </View>
+                <View style={styles.sheetDivider} />
+                {[
+                  { icon: 'arrow-forward-circle-outline', label: 'Play Next', action: () => { playSong(menuSong); setMenuSong(null); } },
+                  { icon: 'list-outline', label: 'Add to Playing Queue', action: () => { setMenuSong(null); } },
+                  { icon: 'add-circle-outline', label: 'Add to Playlist', action: () => setMenuSong(null) },
+                  { icon: 'play-circle-outline', label: 'Go to Album', action: () => setMenuSong(null) },
+                  { icon: 'person-outline', label: 'Go to Artist', action: () => setMenuSong(null) },
+                  { icon: 'information-circle-outline', label: 'Details', action: () => setMenuSong(null) },
+                  { icon: 'call-outline', label: 'Set as Ringtone', action: () => setMenuSong(null) },
+                  { icon: 'close-circle-outline', label: 'Add to Blacklist', action: () => setMenuSong(null) },
+                  { icon: 'paper-plane-outline', label: 'Share', action: () => setMenuSong(null) },
+                  { icon: 'download-outline', label: 'Download to Device', action: () => setMenuSong(null) },
+                ].map(({ icon, label, action }) => (
+                  <TouchableOpacity key={label} style={styles.sheetOption} onPress={action}>
+                    <Ionicons name={icon as any} size={22} color={Colors.light.text} />
+                    <Text style={styles.sheetOptionText}>{label}</Text>
+                  </TouchableOpacity>
+                ))}
+              </>
+            )}
+          </View>
+        </TouchableOpacity>
+      </Modal>
     </View>
   );
 }
@@ -468,5 +505,58 @@ const styles = StyleSheet.create({
     color: Colors.light.subtext,
     textAlign: 'center',
     lineHeight: 26,
+  },
+  sheetOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.4)',
+    justifyContent: 'flex-end',
+  },
+  sheet: {
+    backgroundColor: Colors.light.background,
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    paddingTop: 20,
+    paddingBottom: 40,
+    paddingHorizontal: 20,
+  },
+  sheetSongRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    marginBottom: 16,
+  },
+  sheetImage: {
+    width: 56,
+    height: 56,
+    borderRadius: 8,
+    backgroundColor: Colors.light.card,
+  },
+  sheetInfo: {
+    flex: 1,
+  },
+  sheetName: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: Colors.light.text,
+    marginBottom: 4,
+  },
+  sheetArtist: {
+    fontSize: 13,
+    color: Colors.light.subtext,
+  },
+  sheetDivider: {
+    height: 1,
+    backgroundColor: Colors.light.border,
+    marginBottom: 8,
+  },
+  sheetOption: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 16,
+    paddingVertical: 14,
+  },
+  sheetOptionText: {
+    fontSize: 15,
+    color: Colors.light.text,
   },
 });

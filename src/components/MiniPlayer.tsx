@@ -2,7 +2,7 @@ import { Text, Image, TouchableOpacity, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '../../constants/theme';
 import { usePlayerStore } from '../store/playerStore';
-import { togglePlayPause } from '../services/audioService';
+import { togglePlayPause, playNext } from '../services/audioService';
 import { navigationRef } from '../navigation/navigationRef';
 
 export default function MiniPlayer() {
@@ -25,7 +25,7 @@ export default function MiniPlayer() {
           color={Colors.accent}
         />
       </TouchableOpacity>
-      <TouchableOpacity style={styles.btn}>
+      <TouchableOpacity style={styles.btn} onPress={playNext}>
         <Ionicons name="play-skip-forward" size={24} color={Colors.accent} />
       </TouchableOpacity>
     </TouchableOpacity>

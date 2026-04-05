@@ -50,7 +50,7 @@ export default function HomeScreen() {
         />
       )}
       {activeTab === 'Songs' && (
-        <SongsContent songs={trending} />
+        <SongsContent songs={trending} query="trending" />
       )}
     </View>
   );

@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { Song } from '../services/api';
+import { getPersistedQueue, persistQueue } from '../storage/storage';
 
 type PlayerStore = {
   currentSong: Song | null;
@@ -19,15 +20,26 @@ type PlayerStore = {
 
 export const usePlayerStore = create<PlayerStore>((set) => ({
   currentSong: null,
-  queue: [],
+  queue: getPersistedQueue(),
   isPlaying: false,
   position: 0,
   duration: 0,
 
-  setCurrentSong: (song) => set({ currentSong: song, isPlaying: true }),
-  setQueue: (songs) => set({ queue: songs }),
-  addToQueue: (song) => set((state) => ({ queue: [...state.queue, song] })),
-  removeFromQueue: (id) => set((state) => ({ queue: state.queue.filter((s) => s.id !== id) })),
+  setCurrentSong: (song) => set({ currentSong: song }),
+  setQueue: (songs) => {
+    persistQueue(songs);
+    set({ queue: songs });
+  },
+  addToQueue: (song) => set((state) => {
+    const queue = [...state.queue, song];
+    persistQueue(queue);
+    return { queue };
+  }),
+  removeFromQueue: (id) => set((state) => {
+    const queue = state.queue.filter((s) => s.id !== id);
+    persistQueue(queue);
+    return { queue };
+  }),
   setIsPlaying: (val) => set({ isPlaying: val }),
   setPosition: (val) => set({ position: val }),
   setDuration: (val) => set({ duration: val }),

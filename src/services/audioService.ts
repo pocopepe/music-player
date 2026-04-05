@@ -4,8 +4,8 @@ import { usePlayerStore } from '../store/playerStore';
 
 let soundInstance: Audio.Sound | null = null;
 
-export async function playSong(song: Song) {
-  const { setCurrentSong, setIsPlaying, setDuration, setPosition } = usePlayerStore.getState();
+export async function playSong(song: Song, queue?: Song[]) {
+  const { setCurrentSong, setIsPlaying, setDuration, setPosition, setQueue, queue: currentQueue } = usePlayerStore.getState();
 
   const url = song.downloadUrl?.find(d => d.quality === '96kbps')?.url;
   if (!url) return;
@@ -27,13 +27,18 @@ export async function playSong(song: Song) {
       if (!status.isLoaded) return;
       setPosition(Math.floor(status.positionMillis / 1000));
       setDuration(Math.floor((status.durationMillis ?? 0) / 1000));
-      if (status.didJustFinish) setIsPlaying(false);
+      if (status.didJustFinish) playNext();
     }
   );
 
   soundInstance = sound;
   setCurrentSong(song);
   setIsPlaying(true);
+
+  if (queue) setQueue(queue);
+  else if (!currentQueue.find(s => s.id === song.id)) {
+    setQueue([...currentQueue, song]);
+  }
 }
 
 export async function togglePlayPause() {
@@ -51,4 +56,24 @@ export async function togglePlayPause() {
 export async function seekTo(seconds: number) {
   if (!soundInstance) return;
   await soundInstance.setPositionAsync(seconds * 1000);
+}
+
+export async function playNext() {
+  const { currentSong, queue } = usePlayerStore.getState();
+  if (!currentSong || queue.length === 0) return;
+  const idx = queue.findIndex(s => s.id === currentSong.id);
+  const next = queue[idx + 1];
+  if (next) await playSong(next);
+}
+
+export async function playPrev() {
+  const { currentSong, queue, position } = usePlayerStore.getState();
+  if (!currentSong || queue.length === 0) return;
+  if (position > 3) {
+    await seekTo(0);
+    return;
+  }
+  const idx = queue.findIndex(s => s.id === currentSong.id);
+  const prev = queue[idx - 1];
+  if (prev) await playSong(prev);
 }

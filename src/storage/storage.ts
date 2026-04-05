@@ -23,3 +23,14 @@ export function removeRecentSearch(query: string) {
 export function clearRecentSearches() {
   storage.remove(RECENT_SEARCHES_KEY);
 }
+
+const QUEUE_KEY = 'queue';
+
+export function getPersistedQueue(): any[] {
+  const raw = storage.getString(QUEUE_KEY);
+  return raw ? JSON.parse(raw) : [];
+}
+
+export function persistQueue(songs: any[]) {
+  storage.set(QUEUE_KEY, JSON.stringify(songs));
+}
