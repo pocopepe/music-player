@@ -1,51 +1,102 @@
-# Welcome to your Expo app 👋
+# Music Player
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+A React Native music streaming app built with Expo, powered by the [JioSaavn API](https://saavn.sumit.co).
 
-## Get started
+---
 
-1. Install dependencies
+## Setup
 
-   ```bash
-   npm install
-   ```
+### Prerequisites
+- Node.js 18+
+- Expo Go app on your device, or an Android/iOS simulator
 
-2. Start the app
-
-   ```bash
-   npx expo start
-   ```
-
-In the output, you'll find options to open the app in a
-
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
-
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
-
-## Get a fresh project
-
-When you're ready, run:
+### Install & Run
 
 ```bash
-npm run reset-project
+git clone <repo-url>
+cd music-player
+npm install
+npx expo start
 ```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+Scan the QR code with Expo Go, or press `a` for Android / `i` for iOS simulator.
 
-## Learn more
+### Build APK
 
-To learn more about developing your project with Expo, look at the following resources:
+```bash
+eas build --platform android --profile preview
+```
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+---
 
-## Join the community
+## Features
 
-Join our community of developers creating universal apps.
+| Feature | Details |
+|---|---|
+| Search | Songs, Artists, Albums with infinite scroll pagination |
+| Full Player | Seek bar, skip ±10s, prev/next |
+| Mini Player | Persistent, synced with full player across all screens |
+| Queue | Add, drag-to-reorder, remove — persisted across sessions |
+| Background Playback | Continues when minimized or screen is off |
+| Shuffle | Picks a random song from the queue each time |
+| Repeat | Off / Repeat All / Repeat One |
+| Download | Download songs for offline listening |
+| Offline Playback | Downloaded songs play without internet |
+| Favourites | Like/unlike songs, persisted locally |
+| Recently Played | Auto-tracked, seeds the Suggested tab |
+| Most Played | Sorted by play count |
+| Sort | Songs, Artists, Albums all sortable |
+| Dark Mode | Follows system appearance automatically |
 
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
-# music-player
+---
+
+## Architecture
+
+```
+src/
+├── screens/           # Home, Player, Search, Queue, Album, Artist, Favourites
+├── components/
+│   ├── home/          # Suggested, Songs, Artists, Albums tab content
+│   ├── AppHeader.tsx
+│   ├── FilterTabs.tsx
+│   └── MiniPlayer.tsx
+├── services/
+│   ├── api.ts             # JioSaavn API
+│   ├── audioService.ts    # expo-av playback
+│   └── downloadService.ts # expo-file-system downloads
+├── store/
+│   ├── playerStore.ts     # Zustand — song, queue, playback state
+│   └── downloadStore.ts   # Zustand — downloaded song IDs
+├── storage/
+│   └── storage.ts         # MMKV — likes, downloads, recents, play counts, queue
+├── hooks/
+│   └── useColors.ts       # Dark/light theme hook
+└── navigation/
+    └── RootNavigator.tsx  # Stack + Tab navigation
+```
+
+### Key Decisions
+
+**Single audio instance** — A module-level `soundInstance` in `audioService.ts` is shared across the entire app. All screens read from the same Zustand store updated by the same audio callbacks, keeping Mini Player and Full Player perfectly in sync with zero extra wiring.
+
+**Zustand over Redux** — No boilerplate. `usePlayerStore.getState()` works outside React components, which is critical for the `didJustFinish` audio callback that triggers `playNext()` without any React context.
+
+**MMKV over AsyncStorage** — Synchronous reads. Liked songs, queue, and recently played are available instantly on launch with no loading states or async waterfalls.
+
+**`navigationRef` pattern** — Allows `MiniPlayer` and `audioService` to trigger navigation (e.g. open Player screen) from outside the React tree.
+
+**Download URL refresh** — JioSaavn CDN URLs expire. On download, `getSongById` fetches a fresh URL before writing to disk, preventing broken offline files.
+
+**Dark mode via hook** — `useColors()` reads `useColorScheme()` and returns `Colors.light` or `Colors.dark`. Styles are built inside `useMemo` so they recompute automatically on scheme change across all 18 screens and components.
+
+---
+
+## Trade-offs
+
+**No mock data** — All content is live from the API. Internet required for search and streaming; downloaded songs play fully offline.
+
+**Local Artists/Albums tabs** — Show only content from downloaded songs. API-based artist/album browsing is available in Search.
+
+**Album metadata fetch** — The Albums tab fetches full album data from the API on first load to show real song counts and release years. Cached in MMKV after the first fetch so subsequent visits are instant.
+
+**No crossfade/gapless** — Single audio instance means clean but non-overlapping track transitions. Sufficient for the scope of this project.
