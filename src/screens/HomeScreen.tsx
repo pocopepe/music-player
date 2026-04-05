@@ -4,7 +4,7 @@ import { Colors } from '../../constants/theme';
 import AppHeader from '../components/AppHeader';
 import FilterTabs from '../components/FilterTabs';
 import SuggestedContent from '../components/home/SuggestedContent';
-import SongsContent from '../components/home/SongsContent';
+import LocalSongsContent from '../components/home/LocalSongsContent';
 import { searchSongs, Song } from '../services/api';
 
 export default function HomeScreen() {
@@ -44,25 +44,14 @@ export default function HomeScreen() {
       <AppHeader />
       <FilterTabs activeTab={activeTab} onTabChange={setActiveTab} />
       {activeTab === 'Suggested' && (
-        <SuggestedContent
-          recentlyPlayed={trending.slice(0, 10)}
-          mostPlayed={popular.slice(0, 10)}
-        />
+        <SuggestedContent recentlyPlayed={trending.slice(0, 10)} mostPlayed={popular.slice(0, 10)} />
       )}
-      {activeTab === 'Songs' && (
-        <SongsContent songs={trending} query="trending" />
-      )}
+      {activeTab === 'Songs' && <LocalSongsContent />}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: Colors.light.background,
-  },
-  centered: {
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
+  container: { flex: 1, backgroundColor: Colors.light.background },
+  centered: { alignItems: 'center', justifyContent: 'center' },
 });

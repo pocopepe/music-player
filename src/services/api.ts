@@ -37,6 +37,16 @@ export type Album = {
   year?: string;
 };
 
+export async function getSongById(id: string): Promise<Song | null> {
+  try {
+    const res = await fetch(`https://saavn.sumit.co/api/songs?ids=${id}`);
+    const data = await res.json();
+    return data?.data?.[0] ?? null;
+  } catch {
+    return null;
+  }
+}
+
 export async function searchSongs(query: string, page = 1): Promise<{ results: Song[]; total: number }> {
   const data = await get<any>(`/api/search/songs?query=${encodeURIComponent(query)}&page=${page}`);
   return data.data;

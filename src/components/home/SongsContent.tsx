@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   View, Text, FlatList, Image, TouchableOpacity,
   StyleSheet, Modal, ActivityIndicator,
@@ -8,6 +8,7 @@ import { Colors } from '../../../constants/theme';
 import { Song, searchSongs } from '../../services/api';
 import { playSong, togglePlayPause, playNext } from '../../services/audioService';
 import { usePlayerStore } from '../../store/playerStore';
+import { isSongLiked, toggleLikedSong } from '../../storage/storage';
 
 const SORT_OPTIONS = ['Ascending', 'Descending', 'Artist', 'Album', 'Year', 'Date Added', 'Date Modified', 'Composer'];
 
@@ -50,6 +51,11 @@ export default function SongsContent({ songs, query }: Props) {
   const [page, setPage] = useState(1);
   const [loadingMore, setLoadingMore] = useState(false);
   const [menuSong, setMenuSong] = useState<Song | null>(null);
+  const [isLiked, setIsLiked] = useState(false);
+
+  useEffect(() => {
+    if (menuSong) setIsLiked(isSongLiked(menuSong.id));
+  }, [menuSong]);
 
   const sortedSongs = sortSongs(allSongs, sortOption);
 
@@ -120,6 +126,9 @@ export default function SongsContent({ songs, query }: Props) {
                       {menuSong.artists.primary.map(a => a.name).join(', ')} | {formatDuration(menuSong.duration)}
                     </Text>
                   </View>
+                  <TouchableOpacity onPress={() => setIsLiked(toggleLikedSong(menuSong))}>
+                    <Ionicons name={isLiked ? 'heart' : 'heart-outline'} size={24} color={isLiked ? Colors.accent : Colors.light.subtext} />
+                  </TouchableOpacity>
                 </View>
                 <View style={styles.sheetDivider} />
                 {[

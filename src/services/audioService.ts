@@ -7,7 +7,7 @@ let soundInstance: Audio.Sound | null = null;
 export async function playSong(song: Song, queue?: Song[]) {
   const { setCurrentSong, setIsPlaying, setDuration, setPosition, setQueue, queue: currentQueue } = usePlayerStore.getState();
 
-  const url = song.downloadUrl?.find(d => d.quality === '96kbps')?.url;
+  const url = (song as any).localPath ?? song.downloadUrl?.find(d => d.quality === '96kbps')?.url;
   if (!url) return;
 
   if (soundInstance) {

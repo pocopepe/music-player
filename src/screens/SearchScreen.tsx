@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   View, Text, Image, TextInput, TouchableOpacity,
   FlatList, ScrollView, ActivityIndicator, StyleSheet, Modal,
@@ -8,10 +8,14 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Colors } from '../../constants/theme';
 import { searchSongs, searchArtists, searchAlbums, Song, Artist, Album } from '../services/api';
 import { playSong } from '../services/audioService';
+import { downloadSong, deleteSong } from '../services/downloadService';
 import {
   getRecentSearches, addRecentSearch,
   removeRecentSearch, clearRecentSearches,
+  isSongLiked, toggleLikedSong,
+  saveDownloadedSong, removeDownloadedSong,
 } from '../storage/storage';
+import { useDownloadStore } from '../store/downloadStore';
 
 const FILTER_CHIPS = ['Songs', 'Artists', 'Albums', 'Folders'];
 
@@ -30,6 +34,35 @@ export default function SearchScreen({ navigation }: any) {
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(0);
   const [menuSong, setMenuSong] = useState<Song | null>(null);
+  const [isLiked, setIsLiked] = useState(false);
+  const { downloadedIds, refresh } = useDownloadStore();
+
+  useEffect(() => {
+    if (menuSong) setIsLiked(isSongLiked(menuSong.id));
+  }, [menuSong]);
+
+  async function handleDownload() {
+    if (!menuSong) return;
+    const song = menuSong;
+    setMenuSong(null);
+    try {
+      const path = await downloadSong(song);
+      saveDownloadedSong({ ...song, localPath: path });
+      refresh();
+      console.log('[search] saved to storage:', song.name);
+    } catch (e) {
+      console.log('[search] download error:', e);
+    }
+  }
+
+  async function handleDeleteDownload() {
+    if (!menuSong) return;
+    const song = menuSong;
+    setMenuSong(null);
+    await deleteSong(song.id);
+    removeDownloadedSong(song.id);
+    refresh();
+  }
 
   function handleRemove(item: string) {
     removeRecentSearch(item);
@@ -318,6 +351,9 @@ export default function SearchScreen({ navigation }: any) {
                     <Text style={styles.sheetName} numberOfLines={1}>{menuSong.name}</Text>
                     <Text style={styles.sheetArtist} numberOfLines={1}>{menuSong.artists.primary.map(a => a.name).join(', ')}</Text>
                   </View>
+                  <TouchableOpacity onPress={() => setIsLiked(toggleLikedSong(menuSong))}>
+                    <Ionicons name={isLiked ? 'heart' : 'heart-outline'} size={24} color={isLiked ? Colors.accent : Colors.light.subtext} />
+                  </TouchableOpacity>
                 </View>
                 <View style={styles.sheetDivider} />
                 {[
@@ -330,7 +366,9 @@ export default function SearchScreen({ navigation }: any) {
                   { icon: 'call-outline', label: 'Set as Ringtone', action: () => setMenuSong(null) },
                   { icon: 'close-circle-outline', label: 'Add to Blacklist', action: () => setMenuSong(null) },
                   { icon: 'paper-plane-outline', label: 'Share', action: () => setMenuSong(null) },
-                  { icon: 'download-outline', label: 'Download to Device', action: () => setMenuSong(null) },
+                  menuSong && downloadedIds.has(menuSong.id)
+                    ? { icon: 'trash-outline', label: 'Delete from Device', action: handleDeleteDownload }
+                    : { icon: 'download-outline', label: 'Download to Device', action: handleDownload },
                 ].map(({ icon, label, action }) => (
                   <TouchableOpacity key={label} style={styles.sheetOption} onPress={action}>
                     <Ionicons name={icon as any} size={22} color={Colors.light.text} />

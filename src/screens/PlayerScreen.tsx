@@ -95,8 +95,8 @@ export default function PlayerScreen({ navigation }: any) {
         <TouchableOpacity style={styles.secBtn}>
           <Ionicons name="tv-outline" size={24} color={Colors.light.icon} />
         </TouchableOpacity>
-        <TouchableOpacity style={styles.secBtn}>
-          <Ionicons name="ellipsis-vertical" size={24} color={Colors.light.icon} />
+        <TouchableOpacity style={styles.secBtn} onPress={() => navigation.navigate('Queue')}>
+          <Ionicons name="list" size={24} color={Colors.light.icon} />
         </TouchableOpacity>
       </View>
 

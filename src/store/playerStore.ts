@@ -13,6 +13,7 @@ type PlayerStore = {
   setQueue: (songs: Song[]) => void;
   addToQueue: (song: Song) => void;
   removeFromQueue: (id: string) => void;
+  removeFromQueueAt: (index: number) => void;
   setIsPlaying: (val: boolean) => void;
   setPosition: (val: number) => void;
   setDuration: (val: number) => void;
@@ -37,6 +38,11 @@ export const usePlayerStore = create<PlayerStore>((set) => ({
   }),
   removeFromQueue: (id) => set((state) => {
     const queue = state.queue.filter((s) => s.id !== id);
+    persistQueue(queue);
+    return { queue };
+  }),
+  removeFromQueueAt: (index) => set((state) => {
+    const queue = state.queue.filter((_, i) => i !== index);
     persistQueue(queue);
     return { queue };
   }),
