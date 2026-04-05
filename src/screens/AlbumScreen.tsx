@@ -8,11 +8,10 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Colors } from '../../constants/theme';
 import { getAlbum, Song } from '../services/api';
 import { playSong, togglePlayPause, playNext } from '../services/audioService';
-import { downloadSong } from '../services/downloadService';
+import { downloadSong, deleteSong } from '../services/downloadService';
 import { usePlayerStore } from '../store/playerStore';
 import { useDownloadStore } from '../store/downloadStore';
 import { isSongLiked, toggleLikedSong, saveDownloadedSong, removeDownloadedSong } from '../storage/storage';
-import { deleteSong } from '../services/downloadService';
 
 function formatDuration(seconds: number): string {
   const m = Math.floor(seconds / 60);
@@ -76,8 +75,8 @@ export default function AlbumScreen({ route, navigation }: any) {
       const path = await downloadSong(song);
       saveDownloadedSong({ ...song, localPath: path });
       refresh();
-    } catch (e) {
-      console.log('[album] download error:', e);
+    } catch {
+      // ignore
     }
   }
 

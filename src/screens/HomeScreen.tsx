@@ -28,8 +28,8 @@ export default function HomeScreen({ navigation }: any) {
         ]);
         setTrending(trendingData.results);
         setPopular(popularData.results);
-      } catch (err) {
-        console.log('Home fetch error:', err);
+      } catch {
+        // ignore
       } finally {
         setLoading(false);
       }

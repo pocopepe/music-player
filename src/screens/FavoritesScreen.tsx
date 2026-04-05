@@ -39,8 +39,8 @@ export default function FavoritesScreen() {
       const path = await downloadSong(song);
       saveDownloadedSong({ ...song, localPath: path });
       refresh();
-    } catch (e) {
-      console.log('[favourites] download error:', e);
+    } catch {
+      // ignore
     }
   }
 

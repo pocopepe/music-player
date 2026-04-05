@@ -50,9 +50,8 @@ export default function SearchScreen({ navigation }: any) {
       const path = await downloadSong(song);
       saveDownloadedSong({ ...song, localPath: path });
       refresh();
-      console.log('[search] saved to storage:', song.name);
-    } catch (e) {
-      console.log('[search] download error:', e);
+    } catch {
+      // ignore
     }
   }
 
