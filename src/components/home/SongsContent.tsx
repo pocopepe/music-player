@@ -1,10 +1,8 @@
-import { useState, useEffect } from 'react';
-import {
-  View, Text, FlatList, Image, TouchableOpacity,
-  StyleSheet, Modal, ActivityIndicator,
-} from 'react-native';
+import { useState, useEffect, useMemo } from 'react';
+import { View, Text, FlatList, Image, TouchableOpacity, StyleSheet, Modal, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '../../../constants/theme';
+import { useColors } from '../../hooks/useColors';
 import { Song, searchSongs } from '../../services/api';
 import { playSong, togglePlayPause, playNext } from '../../services/audioService';
 import { usePlayerStore } from '../../store/playerStore';
@@ -12,10 +10,7 @@ import { isSongLiked, toggleLikedSong } from '../../storage/storage';
 
 const SORT_OPTIONS = ['Ascending', 'Descending', 'Artist', 'Album', 'Year', 'Date Added', 'Date Modified', 'Composer'];
 
-type Props = {
-  songs: Song[];
-  query: string;
-};
+type Props = { songs: Song[]; query: string };
 
 function formatDuration(seconds: number): string {
   const m = Math.floor(seconds / 60);
@@ -26,25 +21,17 @@ function formatDuration(seconds: number): string {
 function sortSongs(songs: Song[], option: string): Song[] {
   const sorted = [...songs];
   switch (option) {
-    case 'Ascending':
-      return sorted.sort((a, b) => a.name.localeCompare(b.name));
-    case 'Descending':
-      return sorted.sort((a, b) => b.name.localeCompare(a.name));
-    case 'Artist':
-      return sorted.sort((a, b) => {
-        const aArtist = a.artists.primary[0]?.name ?? '';
-        const bArtist = b.artists.primary[0]?.name ?? '';
-        return aArtist.localeCompare(bArtist);
-      });
-    case 'Album':
-      return sorted.sort((a, b) => a.album.name.localeCompare(b.album.name));
-    default:
-      return sorted;
+    case 'Ascending': return sorted.sort((a, b) => a.name.localeCompare(b.name));
+    case 'Descending': return sorted.sort((a, b) => b.name.localeCompare(a.name));
+    case 'Artist': return sorted.sort((a, b) => (a.artists.primary[0]?.name ?? '').localeCompare(b.artists.primary[0]?.name ?? ''));
+    case 'Album': return sorted.sort((a, b) => a.album.name.localeCompare(b.album.name));
+    default: return sorted;
   }
 }
 
 export default function SongsContent({ songs, query }: Props) {
   const { currentSong, isPlaying, addToQueue } = usePlayerStore();
+  const C = useColors();
   const [sortOption, setSortOption] = useState('Ascending');
   const [showSort, setShowSort] = useState(false);
   const [allSongs, setAllSongs] = useState<Song[]>(songs);
@@ -53,32 +40,48 @@ export default function SongsContent({ songs, query }: Props) {
   const [menuSong, setMenuSong] = useState<Song | null>(null);
   const [isLiked, setIsLiked] = useState(false);
 
-  useEffect(() => {
-    if (menuSong) setIsLiked(isSongLiked(menuSong.id));
-  }, [menuSong]);
+  const styles = useMemo(() => StyleSheet.create({
+    container: { flex: 1 },
+    headerRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 20, paddingVertical: 14 },
+    count: { fontSize: 16, fontWeight: '700', color: C.text },
+    activeName: { color: Colors.accent },
+    sortButton: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+    sortText: { fontSize: 14, fontWeight: '600', color: Colors.accent },
+    row: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 20, paddingVertical: 10, gap: 12 },
+    image: { width: 60, height: 60, borderRadius: 8, backgroundColor: C.card },
+    info: { flex: 1 },
+    name: { fontSize: 15, fontWeight: '700', color: C.text, marginBottom: 4 },
+    metaRow: { flexDirection: 'row', alignItems: 'center', overflow: 'hidden' },
+    metaArtist: { flexShrink: 1, fontSize: 13, color: C.subtext },
+    metaDuration: { fontSize: 13, color: C.subtext, flexShrink: 0 },
+    overlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.2)', justifyContent: 'flex-start', alignItems: 'flex-end', paddingTop: 120, paddingRight: 20 },
+    dropdown: { backgroundColor: C.background, borderRadius: 12, paddingVertical: 8, minWidth: 200, shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.15, shadowRadius: 12, elevation: 8 },
+    sortRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 20, paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: C.border },
+    sortOptionText: { fontSize: 15, color: C.text },
+    radio: { width: 20, height: 20, borderRadius: 10, borderWidth: 2, borderColor: Colors.accent, alignItems: 'center', justifyContent: 'center' },
+    radioActive: { borderColor: Colors.accent },
+    radioDot: { width: 10, height: 10, borderRadius: 5, backgroundColor: Colors.accent },
+    sheetOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'flex-end' },
+    sheet: { backgroundColor: C.background, borderTopLeftRadius: 20, borderTopRightRadius: 20, paddingTop: 20, paddingBottom: 40, paddingHorizontal: 20 },
+    sheetSongRow: { flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 16 },
+    sheetImage: { width: 56, height: 56, borderRadius: 8, backgroundColor: C.card },
+    sheetSongInfo: { flex: 1 },
+    sheetSongName: { fontSize: 15, fontWeight: '700', color: C.text, marginBottom: 4 },
+    sheetSongArtist: { fontSize: 13, color: C.subtext },
+    sheetDivider: { height: 1, backgroundColor: C.border, marginBottom: 8 },
+    sheetOption: { flexDirection: 'row', alignItems: 'center', gap: 16, paddingVertical: 14 },
+    sheetOptionText: { fontSize: 15, color: C.text },
+  }), [C]);
+
+  useEffect(() => { if (menuSong) setIsLiked(isSongLiked(menuSong.id)); }, [menuSong]);
 
   const sortedSongs = sortSongs(allSongs, sortOption);
 
   async function handleLoadMore() {
     if (loadingMore) return;
     setLoadingMore(true);
-    try {
-      const data = await searchSongs(query, page + 1);
-      setAllSongs(prev => [...prev, ...data.results]);
-      setPage(p => p + 1);
-    } catch {
-      // ignore
-    } finally {
-      setLoadingMore(false);
-    }
-  }
-
-  function handlePlay(item: Song) {
-    if (currentSong?.id === item.id) {
-      togglePlayPause();
-    } else {
-      playSong(item);
-    }
+    try { const data = await searchSongs(query, page + 1); setAllSongs(prev => [...prev, ...data.results]); setPage(p => p + 1); }
+    catch { } finally { setLoadingMore(false); }
   }
 
   return (
@@ -95,11 +98,7 @@ export default function SongsContent({ songs, query }: Props) {
         <TouchableOpacity style={styles.overlay} activeOpacity={1} onPress={() => setShowSort(false)}>
           <View style={styles.dropdown}>
             {SORT_OPTIONS.map((opt) => (
-              <TouchableOpacity
-                key={opt}
-                style={styles.sortRow}
-                onPress={() => { setSortOption(opt); setShowSort(false); }}
-              >
+              <TouchableOpacity key={opt} style={styles.sortRow} onPress={() => { setSortOption(opt); setShowSort(false); }}>
                 <Text style={styles.sortOptionText}>{opt}</Text>
                 <View style={[styles.radio, sortOption === opt && styles.radioActive]}>
                   {sortOption === opt && <View style={styles.radioDot} />}
@@ -116,18 +115,13 @@ export default function SongsContent({ songs, query }: Props) {
             {menuSong && (
               <>
                 <View style={styles.sheetSongRow}>
-                  <Image
-                    source={{ uri: menuSong.image?.find(i => i.quality === '150x150')?.url }}
-                    style={styles.sheetImage}
-                  />
+                  <Image source={{ uri: menuSong.image?.find(i => i.quality === '150x150')?.url }} style={styles.sheetImage} />
                   <View style={styles.sheetSongInfo}>
                     <Text style={styles.sheetSongName} numberOfLines={1}>{menuSong.name}</Text>
-                    <Text style={styles.sheetSongArtist} numberOfLines={1}>
-                      {menuSong.artists.primary.map(a => a.name).join(', ')} | {formatDuration(menuSong.duration)}
-                    </Text>
+                    <Text style={styles.sheetSongArtist} numberOfLines={1}>{menuSong.artists.primary.map(a => a.name).join(', ')} | {formatDuration(menuSong.duration)}</Text>
                   </View>
                   <TouchableOpacity onPress={() => setIsLiked(toggleLikedSong(menuSong))}>
-                    <Ionicons name={isLiked ? 'heart' : 'heart-outline'} size={24} color={isLiked ? Colors.accent : Colors.light.subtext} />
+                    <Ionicons name={isLiked ? 'heart' : 'heart-outline'} size={24} color={isLiked ? Colors.accent : C.subtext} />
                   </TouchableOpacity>
                 </View>
                 <View style={styles.sheetDivider} />
@@ -143,7 +137,7 @@ export default function SongsContent({ songs, query }: Props) {
                   { icon: 'paper-plane-outline', label: 'Share', action: () => setMenuSong(null) },
                 ].map(({ icon, label, action }) => (
                   <TouchableOpacity key={label} style={styles.sheetOption} onPress={action}>
-                    <Ionicons name={icon as any} size={22} color={Colors.light.text} />
+                    <Ionicons name={icon as any} size={22} color={C.text} />
                     <Text style={styles.sheetOptionText}>{label}</Text>
                   </TouchableOpacity>
                 ))}
@@ -155,15 +149,14 @@ export default function SongsContent({ songs, query }: Props) {
 
       <FlatList
         data={sortedSongs}
-        keyExtractor={(item) => item.id}
+        keyExtractor={item => item.id}
         contentContainerStyle={{ paddingBottom: 160 }}
         onEndReached={handleLoadMore}
         onEndReachedThreshold={0.4}
         ListFooterComponent={loadingMore ? <ActivityIndicator color={Colors.accent} style={{ padding: 16 }} /> : null}
         renderItem={({ item }) => {
           const imageUrl = item.image?.find(i => i.quality === '150x150')?.url;
-          const artists = item.artists.primary.map((a) => a.name).join(', ');
-          const duration = formatDuration(item.duration);
+          const artists = item.artists.primary.map(a => a.name).join(', ');
           const isActive = currentSong?.id === item.id;
           return (
             <View style={styles.row}>
@@ -172,18 +165,14 @@ export default function SongsContent({ songs, query }: Props) {
                 <Text style={[styles.name, isActive && styles.activeName]} numberOfLines={1}>{item.name}</Text>
                 <View style={styles.metaRow}>
                   <Text style={styles.metaArtist} numberOfLines={1}>{artists}</Text>
-                  <Text style={styles.metaDuration}> | {duration}</Text>
+                  <Text style={styles.metaDuration}> | {formatDuration(item.duration)}</Text>
                 </View>
               </View>
-              <TouchableOpacity onPress={() => handlePlay(item)}>
-                <Ionicons
-                  name={isActive && isPlaying ? 'pause-circle' : 'play-circle'}
-                  size={36}
-                  color={Colors.accent}
-                />
+              <TouchableOpacity onPress={() => { if (currentSong?.id === item.id) togglePlayPause(); else playSong(item); }}>
+                <Ionicons name={isActive && isPlaying ? 'pause-circle' : 'play-circle'} size={36} color={Colors.accent} />
               </TouchableOpacity>
               <TouchableOpacity onPress={() => setMenuSong(item)}>
-                <Ionicons name="ellipsis-vertical" size={20} color={Colors.light.subtext} />
+                <Ionicons name="ellipsis-vertical" size={20} color={C.subtext} />
               </TouchableOpacity>
             </View>
           );
@@ -192,55 +181,3 @@ export default function SongsContent({ songs, query }: Props) {
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: { flex: 1 },
-  headerRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingVertical: 14,
-  },
-  count: { fontSize: 16, fontWeight: '700', color: Colors.light.text },
-  activeName: { color: Colors.accent },
-  sortButton: { flexDirection: 'row', alignItems: 'center', gap: 4 },
-  sortText: { fontSize: 14, fontWeight: '600', color: Colors.accent },
-  row: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 20, paddingVertical: 10, gap: 12 },
-  image: { width: 60, height: 60, borderRadius: 8, backgroundColor: Colors.light.card },
-  info: { flex: 1 },
-  name: { fontSize: 15, fontWeight: '700', color: Colors.light.text, marginBottom: 4 },
-  metaRow: { flexDirection: 'row', alignItems: 'center', overflow: 'hidden' },
-  metaArtist: { flexShrink: 1, fontSize: 13, color: Colors.light.subtext },
-  metaDuration: { fontSize: 13, color: Colors.light.subtext, flexShrink: 0 },
-  overlay: {
-    flex: 1, backgroundColor: 'rgba(0,0,0,0.2)',
-    justifyContent: 'flex-start', alignItems: 'flex-end',
-    paddingTop: 120, paddingRight: 20,
-  },
-  dropdown: {
-    backgroundColor: Colors.light.background, borderRadius: 12,
-    paddingVertical: 8, minWidth: 200,
-    shadowColor: '#000', shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.15, shadowRadius: 12, elevation: 8,
-  },
-  sortRow: {
-    flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
-    paddingHorizontal: 20, paddingVertical: 14,
-    borderBottomWidth: 1, borderBottomColor: Colors.light.border,
-  },
-  sortOptionText: { fontSize: 15, color: Colors.light.text },
-  radio: { width: 20, height: 20, borderRadius: 10, borderWidth: 2, borderColor: Colors.accent, alignItems: 'center', justifyContent: 'center' },
-  radioActive: { borderColor: Colors.accent },
-  radioDot: { width: 10, height: 10, borderRadius: 5, backgroundColor: Colors.accent },
-  sheetOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'flex-end' },
-  sheet: { backgroundColor: Colors.light.background, borderTopLeftRadius: 20, borderTopRightRadius: 20, paddingTop: 20, paddingBottom: 40, paddingHorizontal: 20 },
-  sheetSongRow: { flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 16 },
-  sheetImage: { width: 56, height: 56, borderRadius: 8, backgroundColor: Colors.light.card },
-  sheetSongInfo: { flex: 1 },
-  sheetSongName: { fontSize: 15, fontWeight: '700', color: Colors.light.text, marginBottom: 4 },
-  sheetSongArtist: { fontSize: 13, color: Colors.light.subtext },
-  sheetDivider: { height: 1, backgroundColor: Colors.light.border, marginBottom: 8 },
-  sheetOption: { flexDirection: 'row', alignItems: 'center', gap: 16, paddingVertical: 14 },
-  sheetOptionText: { fontSize: 15, color: Colors.light.text },
-});

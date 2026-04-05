@@ -1,7 +1,8 @@
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useMemo } from 'react';
 import { ActivityIndicator, StyleSheet, View } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { Colors } from '../../constants/theme';
+import { useColors } from '../hooks/useColors';
 import AppHeader from '../components/AppHeader';
 import FilterTabs from '../components/FilterTabs';
 import SuggestedContent from '../components/home/SuggestedContent';
@@ -12,12 +13,18 @@ import { searchSongs, Song } from '../services/api';
 import { getRecentlyPlayed, getMostPlayed } from '../storage/storage';
 
 export default function HomeScreen({ navigation }: any) {
+  const C = useColors();
   const [activeTab, setActiveTab] = useState('Suggested');
   const [trending, setTrending] = useState<Song[]>([]);
   const [popular, setPopular] = useState<Song[]>([]);
   const [recentlyPlayed, setRecentlyPlayed] = useState<Song[]>([]);
   const [mostPlayed, setMostPlayed] = useState<Song[]>([]);
   const [loading, setLoading] = useState(true);
+
+  const styles = useMemo(() => StyleSheet.create({
+    container: { flex: 1, backgroundColor: C.background },
+    centered: { alignItems: 'center', justifyContent: 'center' },
+  }), [C]);
 
   useEffect(() => {
     async function fetchInitial() {
@@ -68,8 +75,3 @@ export default function HomeScreen({ navigation }: any) {
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: Colors.light.background },
-  centered: { alignItems: 'center', justifyContent: 'center' },
-});

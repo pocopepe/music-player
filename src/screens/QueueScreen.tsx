@@ -1,8 +1,10 @@
+import { useMemo } from 'react';
 import { View, Text, Image, TouchableOpacity, StyleSheet } from 'react-native';
 import DraggableFlatList, { RenderItemParams, ScaleDecorator } from 'react-native-draggable-flatlist';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Colors } from '../../constants/theme';
+import { useColors } from '../hooks/useColors';
 import { usePlayerStore } from '../store/playerStore';
 import { playSong } from '../services/audioService';
 import { Song } from '../services/api';
@@ -16,30 +18,53 @@ function formatDuration(seconds: number): string {
 export default function QueueScreen({ navigation }: any) {
   const insets = useSafeAreaInsets();
   const { queue, currentSong, setQueue, removeFromQueueAt } = usePlayerStore();
+  const C = useColors();
   const currentIndex = queue.findIndex(s => s.id === currentSong?.id);
+
+  const styles = useMemo(() => StyleSheet.create({
+    container: { flex: 1, backgroundColor: C.background },
+    header: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 20, paddingVertical: 16, gap: 12 },
+    heading: { flex: 1, fontSize: 20, fontWeight: '700', color: C.text },
+    count: { fontSize: 14, color: C.subtext },
+    empty: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 12, paddingHorizontal: 32 },
+    emptyText: { fontSize: 18, fontWeight: '600', color: C.text },
+    emptySubtext: { fontSize: 14, color: C.subtext, textAlign: 'center' },
+    row: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 20, paddingVertical: 10, gap: 12 },
+    activeRow: { backgroundColor: C.card },
+    dragging: { opacity: 0.9, backgroundColor: C.card },
+    index: { width: 24, fontSize: 13, color: C.subtext, textAlign: 'center' },
+    image: { width: 52, height: 52, borderRadius: 8, backgroundColor: C.card },
+    info: { flex: 1 },
+    name: { fontSize: 15, fontWeight: '600', color: C.text, marginBottom: 3 },
+    activeName: { color: Colors.accent },
+    pastName: { opacity: 0.4 },
+    meta: { fontSize: 13, color: C.subtext },
+    btn: { padding: 4 },
+    btnPlaceholder: { width: 28 },
+  }), [C]);
 
   function renderItem({ item, drag, isActive, getIndex }: RenderItemParams<Song>) {
     const index = getIndex() ?? 0;
     const imageUrl = item.image?.find(i => i.quality === '150x150')?.url;
     const artists = item.artists.primary.map(a => a.name).join(', ');
-    const isActive2 = currentSong?.id === item.id;
+    const isCurrentSong = currentSong?.id === item.id;
     const isPast = index < currentIndex;
     const canInteract = index > currentIndex;
 
     return (
       <ScaleDecorator>
         <TouchableOpacity
-          style={[styles.row, isActive2 && styles.activeRow, isActive && styles.dragging]}
+          style={[styles.row, isCurrentSong && styles.activeRow, isActive && styles.dragging]}
           onPress={() => playSong(item)}
           onLongPress={canInteract ? drag : undefined}
           disabled={isActive}
         >
-          <Text style={[styles.index, isActive2 && { color: Colors.accent }]}>
-            {isActive2 ? '▶' : index + 1}
+          <Text style={[styles.index, isCurrentSong && { color: Colors.accent }]}>
+            {isCurrentSong ? '▶' : index + 1}
           </Text>
           <Image source={{ uri: imageUrl }} style={styles.image} />
           <View style={styles.info}>
-            <Text style={[styles.name, isActive2 && styles.activeName, isPast && styles.pastName]} numberOfLines={1}>
+            <Text style={[styles.name, isCurrentSong && styles.activeName, isPast && styles.pastName]} numberOfLines={1}>
               {item.name}
             </Text>
             <Text style={styles.meta} numberOfLines={1}>{artists} · {formatDuration(item.duration)}</Text>
@@ -47,10 +72,10 @@ export default function QueueScreen({ navigation }: any) {
           {canInteract ? (
             <>
               <TouchableOpacity onPress={() => removeFromQueueAt(index)} style={styles.btn}>
-                <Ionicons name="close" size={20} color={Colors.light.subtext} />
+                <Ionicons name="close" size={20} color={C.subtext} />
               </TouchableOpacity>
               <TouchableOpacity onLongPress={drag} style={styles.btn}>
-                <Ionicons name="reorder-three" size={22} color={Colors.light.subtext} />
+                <Ionicons name="reorder-three" size={22} color={C.subtext} />
               </TouchableOpacity>
             </>
           ) : (
@@ -65,7 +90,7 @@ export default function QueueScreen({ navigation }: any) {
     <View style={[styles.container, { paddingTop: insets.top }]}>
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()}>
-          <Ionicons name="arrow-back" size={24} color={Colors.light.text} />
+          <Ionicons name="arrow-back" size={24} color={C.text} />
         </TouchableOpacity>
         <Text style={styles.heading}>Queue</Text>
         <Text style={styles.count}>{queue.length} songs</Text>
@@ -73,7 +98,7 @@ export default function QueueScreen({ navigation }: any) {
 
       {queue.length === 0 ? (
         <View style={styles.empty}>
-          <Ionicons name="list-outline" size={64} color={Colors.light.border} />
+          <Ionicons name="list-outline" size={64} color={C.border} />
           <Text style={styles.emptyText}>Queue is empty</Text>
           <Text style={styles.emptySubtext}>Add songs from the three-dot menu on any song</Text>
         </View>
@@ -89,25 +114,3 @@ export default function QueueScreen({ navigation }: any) {
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: Colors.light.background },
-  header: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 20, paddingVertical: 16, gap: 12 },
-  heading: { flex: 1, fontSize: 20, fontWeight: '700', color: Colors.light.text },
-  count: { fontSize: 14, color: Colors.light.subtext },
-  empty: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 12, paddingHorizontal: 32 },
-  emptyText: { fontSize: 18, fontWeight: '600', color: Colors.light.text },
-  emptySubtext: { fontSize: 14, color: Colors.light.subtext, textAlign: 'center' },
-  row: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 20, paddingVertical: 10, gap: 12 },
-  activeRow: { backgroundColor: Colors.light.card },
-  dragging: { opacity: 0.9, backgroundColor: Colors.light.card },
-  index: { width: 24, fontSize: 13, color: Colors.light.subtext, textAlign: 'center' },
-  image: { width: 52, height: 52, borderRadius: 8, backgroundColor: Colors.light.card },
-  info: { flex: 1 },
-  name: { fontSize: 15, fontWeight: '600', color: Colors.light.text, marginBottom: 3 },
-  activeName: { color: Colors.accent },
-  pastName: { opacity: 0.4 },
-  meta: { fontSize: 13, color: Colors.light.subtext },
-  btn: { padding: 4 },
-  btnPlaceholder: { width: 28 },
-});

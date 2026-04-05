@@ -16,10 +16,7 @@ export async function playSong(song: Song, queue?: Song[]) {
     soundInstance = null;
   }
 
-  await Audio.setAudioModeAsync({
-    staysActiveInBackground: true,
-    playsInSilentModeIOS: true,
-  });
+  await Audio.setAudioModeAsync({ staysActiveInBackground: true, playsInSilentModeIOS: true });
 
   const { sound } = await Audio.Sound.createAsync(
     { uri: url },
@@ -39,21 +36,14 @@ export async function playSong(song: Song, queue?: Song[]) {
   incrementPlayCount(song);
 
   if (queue) setQueue(queue);
-  else if (!currentQueue.find(s => s.id === song.id)) {
-    setQueue([...currentQueue, song]);
-  }
+  else if (!currentQueue.find(s => s.id === song.id)) setQueue([...currentQueue, song]);
 }
 
 export async function togglePlayPause() {
   const { isPlaying, setIsPlaying } = usePlayerStore.getState();
   if (!soundInstance) return;
-  if (isPlaying) {
-    await soundInstance.pauseAsync();
-    setIsPlaying(false);
-  } else {
-    await soundInstance.playAsync();
-    setIsPlaying(true);
-  }
+  if (isPlaying) { await soundInstance.pauseAsync(); setIsPlaying(false); }
+  else { await soundInstance.playAsync(); setIsPlaying(true); }
 }
 
 export async function seekTo(seconds: number) {
@@ -62,20 +52,36 @@ export async function seekTo(seconds: number) {
 }
 
 export async function playNext() {
-  const { currentSong, queue } = usePlayerStore.getState();
+  const { currentSong, queue, repeatMode, shuffle } = usePlayerStore.getState();
   if (!currentSong || queue.length === 0) return;
+
+  if (repeatMode === 'one') {
+    await seekTo(0);
+    await soundInstance?.playAsync();
+    return;
+  }
+
   const idx = queue.findIndex(s => s.id === currentSong.id);
+
+  if (shuffle) {
+    const others = queue.filter((s) => s.id !== currentSong.id);
+    if (others.length === 0) return;
+    await playSong(others[Math.floor(Math.random() * others.length)]);
+    return;
+  }
+
   const next = queue[idx + 1];
-  if (next) await playSong(next);
+  if (next) {
+    await playSong(next);
+  } else if (repeatMode === 'all' && queue.length > 0) {
+    await playSong(queue[0]);
+  }
 }
 
 export async function playPrev() {
   const { currentSong, queue, position } = usePlayerStore.getState();
   if (!currentSong || queue.length === 0) return;
-  if (position > 3) {
-    await seekTo(0);
-    return;
-  }
+  if (position > 3) { await seekTo(0); return; }
   const idx = queue.findIndex(s => s.id === currentSong.id);
   const prev = queue[idx - 1];
   if (prev) await playSong(prev);

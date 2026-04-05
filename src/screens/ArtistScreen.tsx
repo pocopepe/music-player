@@ -1,8 +1,9 @@
+import { useMemo, useState, useEffect } from 'react';
 import { View, Text, Image, TouchableOpacity, FlatList, StyleSheet, Modal, TextInput } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useState, useEffect } from 'react';
 import { Colors } from '../../constants/theme';
+import { useColors } from '../hooks/useColors';
 import { getDownloadedSongs, isSongLiked, toggleLikedSong } from '../storage/storage';
 import { playSong, togglePlayPause, playNext } from '../services/audioService';
 import { usePlayerStore } from '../store/playerStore';
@@ -30,10 +31,43 @@ export default function ArtistScreen({ route, navigation }: any) {
   const [isLiked, setIsLiked] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [showSearch, setShowSearch] = useState(false);
+  const C = useColors();
 
-  useEffect(() => {
-    if (menuSong) setIsLiked(isSongLiked(menuSong.id));
-  }, [menuSong]);
+  const styles = useMemo(() => StyleSheet.create({
+    container: { flex: 1, backgroundColor: C.background },
+    header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 20, paddingVertical: 12, gap: 8 },
+    headerRight: { flexDirection: 'row', gap: 12 },
+    headerBtn: { padding: 2 },
+    searchInput: { flex: 1, fontSize: 15, color: C.text, borderBottomWidth: 1, borderBottomColor: Colors.accent, paddingVertical: 4 },
+    artistHeader: { alignItems: 'center', paddingHorizontal: 20, paddingBottom: 8 },
+    artwork: { width: 220, height: 220, borderRadius: 16, backgroundColor: C.card, marginBottom: 20 },
+    artistName: { fontSize: 24, fontWeight: '700', color: C.text, textAlign: 'center', marginBottom: 8 },
+    meta: { fontSize: 14, color: C.subtext, textAlign: 'center', marginBottom: 24 },
+    actions: { flexDirection: 'row', gap: 16, marginBottom: 24, width: '100%' },
+    shuffleBtn: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, backgroundColor: Colors.accent, borderRadius: 50, paddingVertical: 14 },
+    shuffleText: { fontSize: 16, fontWeight: '600', color: '#fff' },
+    playBtn: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, backgroundColor: C.card, borderRadius: 50, paddingVertical: 14 },
+    playText: { fontSize: 16, fontWeight: '600', color: Colors.accent },
+    songsLabel: { alignSelf: 'flex-start', fontSize: 18, fontWeight: '700', color: C.text, marginBottom: 8 },
+    row: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 20, paddingVertical: 10, gap: 12 },
+    songImage: { width: 60, height: 60, borderRadius: 8, backgroundColor: C.card },
+    info: { flex: 1 },
+    songName: { fontSize: 15, fontWeight: '600', color: C.text, marginBottom: 3 },
+    activeName: { color: Colors.accent },
+    songArtist: { fontSize: 13, color: C.subtext },
+    sheetOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'flex-end' },
+    sheet: { backgroundColor: C.background, borderTopLeftRadius: 20, borderTopRightRadius: 20, paddingTop: 20, paddingBottom: 40, paddingHorizontal: 20 },
+    sheetSongRow: { flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 16 },
+    sheetImage: { width: 56, height: 56, borderRadius: 8, backgroundColor: C.card },
+    sheetInfo: { flex: 1 },
+    sheetName: { fontSize: 15, fontWeight: '700', color: C.text, marginBottom: 4 },
+    sheetArtist: { fontSize: 13, color: C.subtext },
+    sheetDivider: { height: 1, backgroundColor: C.border, marginBottom: 8 },
+    sheetOption: { flexDirection: 'row', alignItems: 'center', gap: 16, paddingVertical: 14 },
+    sheetOptionText: { fontSize: 15, color: C.text },
+  }), [C]);
+
+  useEffect(() => { if (menuSong) setIsLiked(isSongLiked(menuSong.id)); }, [menuSong]);
 
   const allSongs: Song[] = getDownloadedSongs();
   const artistSongs = allSongs.filter(s => s.artists.primary.some(a => a.id === artistId));
@@ -42,22 +76,17 @@ export default function ArtistScreen({ route, navigation }: any) {
     : artistSongs;
   const albumCount = new Set(artistSongs.map(s => s.album.id)).size;
 
-  function handlePlay(item: Song) {
-    if (currentSong?.id === item.id) togglePlayPause();
-    else playSong(item);
-  }
-
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()}>
-          <Ionicons name="arrow-back" size={24} color={Colors.light.text} />
+          <Ionicons name="arrow-back" size={24} color={C.text} />
         </TouchableOpacity>
         {showSearch ? (
           <TextInput
             style={styles.searchInput}
             placeholder="Search songs..."
-            placeholderTextColor={Colors.light.subtext}
+            placeholderTextColor={C.subtext}
             value={searchQuery}
             onChangeText={setSearchQuery}
             autoFocus
@@ -65,10 +94,10 @@ export default function ArtistScreen({ route, navigation }: any) {
         ) : null}
         <View style={styles.headerRight}>
           <TouchableOpacity style={styles.headerBtn} onPress={() => { setShowSearch(v => !v); setSearchQuery(''); }}>
-            <Ionicons name={showSearch ? 'close' : 'search-outline'} size={24} color={Colors.light.text} />
+            <Ionicons name={showSearch ? 'close' : 'search-outline'} size={24} color={C.text} />
           </TouchableOpacity>
           <TouchableOpacity style={styles.headerBtn}>
-            <Ionicons name="ellipsis-horizontal-circle-outline" size={24} color={Colors.light.text} />
+            <Ionicons name="ellipsis-horizontal-circle-outline" size={24} color={C.text} />
           </TouchableOpacity>
         </View>
       </View>
@@ -79,29 +108,20 @@ export default function ArtistScreen({ route, navigation }: any) {
         contentContainerStyle={{ paddingBottom: 100 }}
         ListHeaderComponent={
           <View style={styles.artistHeader}>
-            <Image
-              source={artistImage ? { uri: artistImage } : undefined}
-              style={styles.artwork}
-            />
+            <Image source={artistImage ? { uri: artistImage } : undefined} style={styles.artwork} />
             <Text style={styles.artistName}>{artistName}</Text>
             <Text style={styles.meta}>
               {albumCount} {albumCount === 1 ? 'Album' : 'Albums'}  |  {songs.length} Songs  |  {totalDuration(songs)}
             </Text>
             <View style={styles.actions}>
-              <TouchableOpacity
-                style={styles.shuffleBtn}
-                onPress={() => {
-                  const shuffled = [...songs].sort(() => Math.random() - 0.5);
-                  if (shuffled[0]) playSong(shuffled[0], shuffled);
-                }}
-              >
+              <TouchableOpacity style={styles.shuffleBtn} onPress={() => {
+                const shuffled = [...songs].sort(() => Math.random() - 0.5);
+                if (shuffled[0]) playSong(shuffled[0], shuffled);
+              }}>
                 <Ionicons name="shuffle" size={20} color="#fff" />
                 <Text style={styles.shuffleText}>Shuffle</Text>
               </TouchableOpacity>
-              <TouchableOpacity
-                style={styles.playBtn}
-                onPress={() => { if (songs[0]) playSong(songs[0], songs); }}
-              >
+              <TouchableOpacity style={styles.playBtn} onPress={() => { if (songs[0]) playSong(songs[0], songs); }}>
                 <Ionicons name="play" size={20} color={Colors.accent} />
                 <Text style={styles.playText}>Play</Text>
               </TouchableOpacity>
@@ -119,15 +139,11 @@ export default function ArtistScreen({ route, navigation }: any) {
                 <Text style={[styles.songName, isActive && styles.activeName]} numberOfLines={1}>{item.name}</Text>
                 <Text style={styles.songArtist} numberOfLines={1}>{item.artists.primary.map(a => a.name).join(', ')}</Text>
               </View>
-              <TouchableOpacity onPress={() => handlePlay(item)}>
-                <Ionicons
-                  name={isActive && isPlaying ? 'pause-circle' : 'play-circle'}
-                  size={36}
-                  color={Colors.accent}
-                />
+              <TouchableOpacity onPress={() => { if (currentSong?.id === item.id) togglePlayPause(); else playSong(item); }}>
+                <Ionicons name={isActive && isPlaying ? 'pause-circle' : 'play-circle'} size={36} color={Colors.accent} />
               </TouchableOpacity>
               <TouchableOpacity onPress={() => setMenuSong(item)}>
-                <Ionicons name="ellipsis-vertical" size={20} color={Colors.light.subtext} />
+                <Ionicons name="ellipsis-vertical" size={20} color={C.subtext} />
               </TouchableOpacity>
             </View>
           );
@@ -148,7 +164,7 @@ export default function ArtistScreen({ route, navigation }: any) {
                     </Text>
                   </View>
                   <TouchableOpacity onPress={() => setIsLiked(toggleLikedSong(menuSong))}>
-                    <Ionicons name={isLiked ? 'heart' : 'heart-outline'} size={24} color={isLiked ? Colors.accent : Colors.light.subtext} />
+                    <Ionicons name={isLiked ? 'heart' : 'heart-outline'} size={24} color={isLiked ? Colors.accent : C.subtext} />
                   </TouchableOpacity>
                 </View>
                 <View style={styles.sheetDivider} />
@@ -163,7 +179,7 @@ export default function ArtistScreen({ route, navigation }: any) {
                   { icon: 'paper-plane-outline', label: 'Share', action: () => setMenuSong(null) },
                 ].map(({ icon, label, action }) => (
                   <TouchableOpacity key={label} style={styles.sheetOption} onPress={action}>
-                    <Ionicons name={icon as any} size={22} color={Colors.light.text} />
+                    <Ionicons name={icon as any} size={22} color={C.text} />
                     <Text style={styles.sheetOptionText}>{label}</Text>
                   </TouchableOpacity>
                 ))}
@@ -175,37 +191,3 @@ export default function ArtistScreen({ route, navigation }: any) {
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: Colors.light.background },
-  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 20, paddingVertical: 12, gap: 8 },
-  headerRight: { flexDirection: 'row', gap: 12 },
-  headerBtn: { padding: 2 },
-  searchInput: { flex: 1, fontSize: 15, color: Colors.light.text, borderBottomWidth: 1, borderBottomColor: Colors.accent, paddingVertical: 4 },
-  artistHeader: { alignItems: 'center', paddingHorizontal: 20, paddingBottom: 8 },
-  artwork: { width: 220, height: 220, borderRadius: 16, backgroundColor: Colors.light.card, marginBottom: 20 },
-  artistName: { fontSize: 24, fontWeight: '700', color: Colors.light.text, textAlign: 'center', marginBottom: 8 },
-  meta: { fontSize: 14, color: Colors.light.subtext, textAlign: 'center', marginBottom: 24 },
-  actions: { flexDirection: 'row', gap: 16, marginBottom: 24, width: '100%' },
-  shuffleBtn: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, backgroundColor: Colors.accent, borderRadius: 50, paddingVertical: 14 },
-  shuffleText: { fontSize: 16, fontWeight: '600', color: '#fff' },
-  playBtn: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, backgroundColor: '#FFF3E8', borderRadius: 50, paddingVertical: 14 },
-  playText: { fontSize: 16, fontWeight: '600', color: Colors.accent },
-  songsLabel: { alignSelf: 'flex-start', fontSize: 18, fontWeight: '700', color: Colors.light.text, marginBottom: 8 },
-  row: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 20, paddingVertical: 10, gap: 12 },
-  songImage: { width: 60, height: 60, borderRadius: 8, backgroundColor: Colors.light.card },
-  info: { flex: 1 },
-  songName: { fontSize: 15, fontWeight: '600', color: Colors.light.text, marginBottom: 3 },
-  activeName: { color: Colors.accent },
-  songArtist: { fontSize: 13, color: Colors.light.subtext },
-  sheetOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'flex-end' },
-  sheet: { backgroundColor: Colors.light.background, borderTopLeftRadius: 20, borderTopRightRadius: 20, paddingTop: 20, paddingBottom: 40, paddingHorizontal: 20 },
-  sheetSongRow: { flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 16 },
-  sheetImage: { width: 56, height: 56, borderRadius: 8, backgroundColor: Colors.light.card },
-  sheetInfo: { flex: 1 },
-  sheetName: { fontSize: 15, fontWeight: '700', color: Colors.light.text, marginBottom: 4 },
-  sheetArtist: { fontSize: 13, color: Colors.light.subtext },
-  sheetDivider: { height: 1, backgroundColor: Colors.light.border, marginBottom: 8 },
-  sheetOption: { flexDirection: 'row', alignItems: 'center', gap: 16, paddingVertical: 14 },
-  sheetOptionText: { fontSize: 15, color: Colors.light.text },
-});

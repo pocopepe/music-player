@@ -62,7 +62,7 @@ export async function searchAlbums(query: string, page = 1): Promise<{ results: 
   return data.data;
 }
 
-export async function getAlbum(id: string): Promise<{ name: string; artists: { primary: { id: string; name: string }[] }; image: { quality: string; url: string }[]; songs: Song[] } | null> {
+export async function getAlbum(id: string): Promise<{ name: string; year?: string; artists: { primary: { id: string; name: string }[] }; image: { quality: string; url: string }[]; songs: Song[] } | null> {
   try {
     const data = await get<any>(`/api/albums?id=${id}`);
     return data.data;

@@ -100,6 +100,21 @@ export function getMostPlayed(limit = 10): any[] {
     .map(e => e.song);
 }
 
+const ALBUM_META_KEY = 'album_meta';
+
+export function saveAlbumMeta(albumId: string, meta: { year?: string; songCount: number }) {
+  const raw = storage.getString(ALBUM_META_KEY);
+  const all = raw ? JSON.parse(raw) : {};
+  all[albumId] = meta;
+  storage.set(ALBUM_META_KEY, JSON.stringify(all));
+}
+
+export function getAlbumMeta(albumId: string): { year?: string; songCount: number } | null {
+  const raw = storage.getString(ALBUM_META_KEY);
+  if (!raw) return null;
+  return JSON.parse(raw)[albumId] ?? null;
+}
+
 const QUEUE_KEY = 'queue';
 
 export function getPersistedQueue(): any[] {

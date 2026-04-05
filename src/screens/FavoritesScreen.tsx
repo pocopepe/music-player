@@ -1,9 +1,10 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useMemo } from 'react';
 import { View, Text, FlatList, Image, TouchableOpacity, StyleSheet, Modal } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Colors } from '../../constants/theme';
+import { useColors } from '../hooks/useColors';
 import { getLikedSongs, toggleLikedSong, isSongLiked, saveDownloadedSong, removeDownloadedSong } from '../storage/storage';
 import { playSong, togglePlayPause, playNext } from '../services/audioService';
 import { downloadSong, deleteSong } from '../services/downloadService';
@@ -24,12 +25,36 @@ export default function FavoritesScreen() {
   const [menuSong, setMenuSong] = useState<Song | null>(null);
   const [isLiked, setIsLiked] = useState(true);
   const { downloadedIds, refresh } = useDownloadStore();
+  const C = useColors();
+
+  const styles = useMemo(() => StyleSheet.create({
+    container: { flex: 1, backgroundColor: C.background },
+    heading: { fontSize: 22, fontWeight: '700', color: C.text, paddingHorizontal: 20, paddingVertical: 16 },
+    empty: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 12 },
+    emptyText: { fontSize: 18, fontWeight: '600', color: C.text },
+    emptySubtext: { fontSize: 14, color: C.subtext, textAlign: 'center', paddingHorizontal: 32 },
+    row: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 20, paddingVertical: 10, gap: 12 },
+    image: { width: 60, height: 60, borderRadius: 8, backgroundColor: C.card },
+    info: { flex: 1 },
+    name: { fontSize: 15, fontWeight: '700', color: C.text, marginBottom: 4 },
+    activeName: { color: Colors.accent },
+    metaRow: { flexDirection: 'row', alignItems: 'center', overflow: 'hidden' },
+    artist: { flexShrink: 1, fontSize: 13, color: C.subtext },
+    duration: { fontSize: 13, color: C.subtext, flexShrink: 0 },
+    sheetOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'flex-end' },
+    sheet: { backgroundColor: C.background, borderTopLeftRadius: 20, borderTopRightRadius: 20, paddingTop: 20, paddingBottom: 40, paddingHorizontal: 20 },
+    sheetSongRow: { flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 16 },
+    sheetImage: { width: 56, height: 56, borderRadius: 8, backgroundColor: C.card },
+    sheetInfo: { flex: 1 },
+    sheetName: { fontSize: 15, fontWeight: '700', color: C.text, marginBottom: 4 },
+    sheetArtist: { fontSize: 13, color: C.subtext },
+    sheetDivider: { height: 1, backgroundColor: C.border, marginBottom: 8 },
+    sheetOption: { flexDirection: 'row', alignItems: 'center', gap: 16, paddingVertical: 14 },
+    sheetOptionText: { fontSize: 15, color: C.text },
+  }), [C]);
 
   useFocusEffect(useCallback(() => { setSongs(getLikedSongs()); }, []));
-
-  useEffect(() => {
-    if (menuSong) setIsLiked(isSongLiked(menuSong.id));
-  }, [menuSong]);
+  useEffect(() => { if (menuSong) setIsLiked(isSongLiked(menuSong.id)); }, [menuSong]);
 
   async function handleDownload() {
     if (!menuSong) return;
@@ -39,9 +64,7 @@ export default function FavoritesScreen() {
       const path = await downloadSong(song);
       saveDownloadedSong({ ...song, localPath: path });
       refresh();
-    } catch {
-      // ignore
-    }
+    } catch { }
   }
 
   async function handleDeleteDownload() {
@@ -53,23 +76,13 @@ export default function FavoritesScreen() {
     refresh();
   }
 
-  function handlePlay(item: Song) {
-    if (currentSong?.id === item.id) togglePlayPause();
-    else playSong(item);
-  }
-
-  function handleUnlike(item: Song) {
-    toggleLikedSong(item);
-    setSongs(getLikedSongs());
-  }
-
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
       <Text style={styles.heading}>Favourites</Text>
 
       {songs.length === 0 ? (
         <View style={styles.empty}>
-          <Ionicons name="heart-outline" size={64} color={Colors.light.border} />
+          <Ionicons name="heart-outline" size={64} color={C.border} />
           <Text style={styles.emptyText}>No favourites yet</Text>
           <Text style={styles.emptySubtext}>Tap the heart on any song to save it here</Text>
         </View>
@@ -92,14 +105,14 @@ export default function FavoritesScreen() {
                     <Text style={styles.duration}> | {formatDuration(item.duration)}</Text>
                   </View>
                 </View>
-                <TouchableOpacity onPress={() => handlePlay(item)}>
+                <TouchableOpacity onPress={() => { if (currentSong?.id === item.id) togglePlayPause(); else playSong(item); }}>
                   <Ionicons name={isActive && isPlaying ? 'pause-circle' : 'play-circle'} size={36} color={Colors.accent} />
                 </TouchableOpacity>
-                <TouchableOpacity onPress={() => handleUnlike(item)}>
+                <TouchableOpacity onPress={() => { toggleLikedSong(item); setSongs(getLikedSongs()); }}>
                   <Ionicons name="heart" size={22} color={Colors.accent} />
                 </TouchableOpacity>
                 <TouchableOpacity onPress={() => setMenuSong(item)}>
-                  <Ionicons name="ellipsis-vertical" size={20} color={Colors.light.subtext} />
+                  <Ionicons name="ellipsis-vertical" size={20} color={C.subtext} />
                 </TouchableOpacity>
               </View>
             );
@@ -120,12 +133,8 @@ export default function FavoritesScreen() {
                       {menuSong.artists.primary.map(a => a.name).join(', ')} | {formatDuration(menuSong.duration)}
                     </Text>
                   </View>
-                  <TouchableOpacity onPress={() => {
-                    const liked = toggleLikedSong(menuSong);
-                    setIsLiked(liked);
-                    setSongs(getLikedSongs());
-                  }}>
-                    <Ionicons name={isLiked ? 'heart' : 'heart-outline'} size={24} color={isLiked ? Colors.accent : Colors.light.subtext} />
+                  <TouchableOpacity onPress={() => { const liked = toggleLikedSong(menuSong); setIsLiked(liked); setSongs(getLikedSongs()); }}>
+                    <Ionicons name={isLiked ? 'heart' : 'heart-outline'} size={24} color={isLiked ? Colors.accent : C.subtext} />
                   </TouchableOpacity>
                 </View>
                 <View style={styles.sheetDivider} />
@@ -144,7 +153,7 @@ export default function FavoritesScreen() {
                     : { icon: 'download-outline', label: 'Download to Device', action: handleDownload },
                 ].map(({ icon, label, action }) => (
                   <TouchableOpacity key={label} style={styles.sheetOption} onPress={action}>
-                    <Ionicons name={icon as any} size={22} color={Colors.light.text} />
+                    <Ionicons name={icon as any} size={22} color={C.text} />
                     <Text style={styles.sheetOptionText}>{label}</Text>
                   </TouchableOpacity>
                 ))}
@@ -156,29 +165,3 @@ export default function FavoritesScreen() {
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: Colors.light.background },
-  heading: { fontSize: 22, fontWeight: '700', color: Colors.light.text, paddingHorizontal: 20, paddingVertical: 16 },
-  empty: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 12 },
-  emptyText: { fontSize: 18, fontWeight: '600', color: Colors.light.text },
-  emptySubtext: { fontSize: 14, color: Colors.light.subtext, textAlign: 'center', paddingHorizontal: 32 },
-  row: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 20, paddingVertical: 10, gap: 12 },
-  image: { width: 60, height: 60, borderRadius: 8, backgroundColor: Colors.light.card },
-  info: { flex: 1 },
-  name: { fontSize: 15, fontWeight: '700', color: Colors.light.text, marginBottom: 4 },
-  activeName: { color: Colors.accent },
-  metaRow: { flexDirection: 'row', alignItems: 'center', overflow: 'hidden' },
-  artist: { flexShrink: 1, fontSize: 13, color: Colors.light.subtext },
-  duration: { fontSize: 13, color: Colors.light.subtext, flexShrink: 0 },
-  sheetOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'flex-end' },
-  sheet: { backgroundColor: Colors.light.background, borderTopLeftRadius: 20, borderTopRightRadius: 20, paddingTop: 20, paddingBottom: 40, paddingHorizontal: 20 },
-  sheetSongRow: { flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 16 },
-  sheetImage: { width: 56, height: 56, borderRadius: 8, backgroundColor: Colors.light.card },
-  sheetInfo: { flex: 1 },
-  sheetName: { fontSize: 15, fontWeight: '700', color: Colors.light.text, marginBottom: 4 },
-  sheetArtist: { fontSize: 13, color: Colors.light.subtext },
-  sheetDivider: { height: 1, backgroundColor: Colors.light.border, marginBottom: 8 },
-  sheetOption: { flexDirection: 'row', alignItems: 'center', gap: 16, paddingVertical: 14 },
-  sheetOptionText: { fontSize: 15, color: Colors.light.text },
-});

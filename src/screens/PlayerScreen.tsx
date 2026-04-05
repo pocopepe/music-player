@@ -1,8 +1,9 @@
-import { useRef } from 'react';
+import { useRef, useMemo } from 'react';
 import { View, Text, Image, TouchableOpacity, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Colors } from '../../constants/theme';
+import { useColors } from '../hooks/useColors';
 import { usePlayerStore } from '../store/playerStore';
 import { togglePlayPause, seekTo, playNext, playPrev } from '../services/audioService';
 
@@ -14,8 +15,34 @@ function formatTime(seconds: number): string {
 
 export default function PlayerScreen({ navigation }: any) {
   const insets = useSafeAreaInsets();
-  const { currentSong, isPlaying, position, duration } = usePlayerStore();
+  const { currentSong, isPlaying, position, duration, repeatMode, shuffle, setRepeatMode, toggleShuffle } = usePlayerStore();
+  const C = useColors();
   const trackWidth = useRef(0);
+
+  const styles = useMemo(() => StyleSheet.create({
+    container: { flex: 1, backgroundColor: C.background, paddingHorizontal: 28 },
+    backBtn: { alignSelf: 'flex-start', marginBottom: 20, padding: 4 },
+    artwork: { width: '100%', aspectRatio: 1, borderRadius: 16, backgroundColor: C.card, marginBottom: 24 },
+    info: { marginBottom: 24 },
+    title: { fontSize: 22, fontWeight: '700', color: C.text, marginBottom: 6 },
+    artist: { fontSize: 16, color: C.subtext },
+    seekContainer: { marginBottom: 28 },
+    track: { height: 4, backgroundColor: C.border, borderRadius: 2, marginBottom: 10, justifyContent: 'center' },
+    fill: { height: 4, backgroundColor: Colors.accent, borderRadius: 2, position: 'absolute', left: 0, top: 0 },
+    thumb: { width: 14, height: 14, borderRadius: 7, backgroundColor: Colors.accent, position: 'absolute', top: -5, marginLeft: -7 },
+    times: { flexDirection: 'row', justifyContent: 'space-between' },
+    time: { fontSize: 16, fontWeight: '600', color: C.text },
+    controls: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 32 },
+    playBtn: { width: 72, height: 72, borderRadius: 36, backgroundColor: Colors.accent, alignItems: 'center', justifyContent: 'center' },
+    skipWrap: { alignItems: 'center', justifyContent: 'center', width: 44, height: 44 },
+    flipIcon: { transform: [{ scaleX: -1 }] },
+    skipLabel: { position: 'absolute', fontSize: 10, fontWeight: '700', color: C.text },
+    secondary: { flexDirection: 'row', justifyContent: 'space-around', marginBottom: 24 },
+    secBtn: { padding: 8 },
+    lyricsBtn: { alignItems: 'center', gap: 2 },
+    repeatOne: { position: 'absolute', fontSize: 9, fontWeight: '700', color: Colors.accent, bottom: 4, right: 4 },
+    lyricsLabel: { fontSize: 14, fontWeight: '600', color: C.subtext },
+  }), [C]);
 
   if (!currentSong) return null;
 
@@ -34,7 +61,7 @@ export default function PlayerScreen({ navigation }: any) {
   return (
     <View style={[styles.container, { paddingTop: insets.top + 8, paddingBottom: insets.bottom + 16 }]}>
       <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()}>
-        <Ionicons name="arrow-back" size={24} color={Colors.light.text} />
+        <Ionicons name="arrow-back" size={24} color={C.text} />
       </TouchableOpacity>
 
       <Image source={{ uri: imageUrl }} style={styles.artwork} />
@@ -63,11 +90,11 @@ export default function PlayerScreen({ navigation }: any) {
 
       <View style={styles.controls}>
         <TouchableOpacity onPress={playPrev}>
-          <Ionicons name="play-skip-back" size={28} color={Colors.light.text} />
+          <Ionicons name="play-skip-back" size={28} color={C.text} />
         </TouchableOpacity>
         <TouchableOpacity onPress={() => seekTo(Math.max(0, position - 10))}>
           <View style={styles.skipWrap}>
-            <Ionicons name="reload" size={28} color={Colors.light.text} style={styles.flipIcon} />
+            <Ionicons name="reload" size={28} color={C.text} style={styles.flipIcon} />
             <Text style={styles.skipLabel}>10</Text>
           </View>
         </TouchableOpacity>
@@ -76,149 +103,42 @@ export default function PlayerScreen({ navigation }: any) {
         </TouchableOpacity>
         <TouchableOpacity onPress={() => seekTo(Math.min(duration, position + 10))}>
           <View style={styles.skipWrap}>
-            <Ionicons name="reload" size={28} color={Colors.light.text} />
+            <Ionicons name="reload" size={28} color={C.text} />
             <Text style={styles.skipLabel}>10</Text>
           </View>
         </TouchableOpacity>
         <TouchableOpacity onPress={playNext}>
-          <Ionicons name="play-skip-forward" size={28} color={Colors.light.text} />
+          <Ionicons name="play-skip-forward" size={28} color={C.text} />
         </TouchableOpacity>
       </View>
 
       <View style={styles.secondary}>
-        <TouchableOpacity style={styles.secBtn}>
-          <Ionicons name="speedometer-outline" size={24} color={Colors.light.icon} />
+        <TouchableOpacity style={styles.secBtn} onPress={toggleShuffle}>
+          <Ionicons name="shuffle" size={24} color={shuffle ? Colors.accent : C.icon} />
+        </TouchableOpacity>
+        <TouchableOpacity style={[styles.secBtn, { position: 'relative' }]} onPress={() => {
+          const next = repeatMode === 'off' ? 'all' : repeatMode === 'all' ? 'one' : 'off';
+          setRepeatMode(next);
+        }}>
+          <Ionicons
+            name={repeatMode === 'one' ? 'repeat-outline' : 'repeat'}
+            size={24}
+            color={repeatMode !== 'off' ? Colors.accent : C.icon}
+          />
+          {repeatMode === 'one' && <Text style={styles.repeatOne}>1</Text>}
         </TouchableOpacity>
         <TouchableOpacity style={styles.secBtn}>
-          <Ionicons name="timer-outline" size={24} color={Colors.light.icon} />
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.secBtn}>
-          <Ionicons name="tv-outline" size={24} color={Colors.light.icon} />
+          <Ionicons name="timer-outline" size={24} color={C.icon} />
         </TouchableOpacity>
         <TouchableOpacity style={styles.secBtn} onPress={() => navigation.navigate('Queue')}>
-          <Ionicons name="list" size={24} color={Colors.light.icon} />
+          <Ionicons name="list" size={24} color={C.icon} />
         </TouchableOpacity>
       </View>
 
       <TouchableOpacity style={styles.lyricsBtn}>
-        <Ionicons name="chevron-up" size={16} color={Colors.light.subtext} />
+        <Ionicons name="chevron-up" size={16} color={C.subtext} />
         <Text style={styles.lyricsLabel}>Lyrics</Text>
       </TouchableOpacity>
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: Colors.light.background,
-    paddingHorizontal: 28,
-  },
-  backBtn: {
-    alignSelf: 'flex-start',
-    marginBottom: 20,
-    padding: 4,
-  },
-  artwork: {
-    width: '100%',
-    aspectRatio: 1,
-    borderRadius: 16,
-    backgroundColor: Colors.light.card,
-    marginBottom: 24,
-  },
-  info: {
-    marginBottom: 24,
-  },
-  title: {
-    fontSize: 22,
-    fontWeight: '700',
-    color: Colors.light.text,
-    marginBottom: 6,
-  },
-  artist: {
-    fontSize: 16,
-    color: Colors.light.subtext,
-  },
-  seekContainer: {
-    marginBottom: 28,
-  },
-  track: {
-    height: 4,
-    backgroundColor: Colors.light.border,
-    borderRadius: 2,
-    marginBottom: 10,
-    justifyContent: 'center',
-  },
-  fill: {
-    height: 4,
-    backgroundColor: Colors.accent,
-    borderRadius: 2,
-    position: 'absolute',
-    left: 0,
-    top: 0,
-  },
-  thumb: {
-    width: 14,
-    height: 14,
-    borderRadius: 7,
-    backgroundColor: Colors.accent,
-    position: 'absolute',
-    top: -5,
-    marginLeft: -7,
-  },
-  times: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-  },
-  time: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: Colors.light.text,
-  },
-  controls: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: 32,
-  },
-  playBtn: {
-    width: 72,
-    height: 72,
-    borderRadius: 36,
-    backgroundColor: Colors.accent,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  skipWrap: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    width: 44,
-    height: 44,
-  },
-  flipIcon: {
-    transform: [{ scaleX: -1 }],
-  },
-  skipLabel: {
-    position: 'absolute',
-    fontSize: 10,
-    fontWeight: '700',
-    color: Colors.light.text,
-  },
-  secondary: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    marginBottom: 24,
-  },
-  secBtn: {
-    padding: 8,
-  },
-  lyricsBtn: {
-    alignItems: 'center',
-    gap: 2,
-  },
-  lyricsLabel: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: Colors.light.subtext,
-  },
-});
