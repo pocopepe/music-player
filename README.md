@@ -13,7 +13,7 @@ A React Native music streaming app built with Expo, powered by the [JioSaavn API
 ### Install & Run
 
 ```bash
-git clone <repo-url>
+git clone https://github.com/pocopepe/music-player
 cd music-player
 npm install
 npx expo start
@@ -21,7 +21,11 @@ npx expo start
 
 Scan the QR code with Expo Go, or press `a` for Android / `i` for iOS simulator.
 
-### Build APK
+### Download APK
+
+[Download latest APK](https://drive.google.com/file/d/19-f05PVzPS4oswlnu65eJ3O8jMdYlkeE/view?usp=sharing)
+
+### Build APK from source
 
 ```bash
 eas build --platform android --profile preview

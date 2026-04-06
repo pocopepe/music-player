@@ -49,3 +49,5 @@ memory/
 
 # Assignment PDF
 *.pdf
+*.apk
+.idea/
